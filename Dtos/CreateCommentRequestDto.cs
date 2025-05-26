@@ -2,7 +2,7 @@ using socialApi.Models;
 
 namespace socialApi.Dtos
 {
-    public class CreatePostRequestDto
+    public class CreateCommentRequestDto
     {
         
         public int AuthorId { get; set; }
@@ -14,9 +14,5 @@ namespace socialApi.Dtos
         public string Content { get; set; } = string.Empty;
 
         public DateTime Date { get; set; } = DateTime.UtcNow;
-
-        public ICollection<User> Likes { get; set; } = new List<User>();
-
-        public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     }
 }

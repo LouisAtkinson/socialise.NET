@@ -36,5 +36,5 @@ namespace socialApi.Mappers
                 DisplayPicture = commentDto.DisplayPicture
             };
         }
-            }
+    }
 }

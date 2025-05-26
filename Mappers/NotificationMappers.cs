@@ -5,7 +5,7 @@ namespace socialApi.Mappers
 {
     public static class NotificationMappers
     {
-        public static NotificationDto ToNoticationDto(this Notification notificationModel)
+        public static NotificationDto ToNotificationDto(this Notification notificationModel)
         {
             return new NotificationDto
             {
