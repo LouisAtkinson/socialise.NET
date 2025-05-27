@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
-using socialApi.Data;
-using socialApi.Dtos;
-using socialApi.Models;
-using socialApi.Mappers;
+using Microsoft.EntityFrameworkCore;
+using api.Data;
+using api.Dtos;
+using api.Models;
+using api.Mappers;
+using api.Repositories;
+using api.Interfaces;
 
-namespace socialApi.Controllers
+namespace api.Controllers
 {
     [Route("api/posts")]
     [ApiController]
@@ -12,14 +15,30 @@ namespace socialApi.Controllers
     {
         private readonly ApplicationDbContext _context;
 
-        public PostController(ApplicationDbContext context)
+        private readonly IPostRepository _postRepo;
+
+        public PostController(ApplicationDbContext context, IPostRepository postRepo)
         {
+            _postRepo = postRepo;
             _context = context;
         }
 
-        [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id) {
-            var post = _context.Post.Find(id);
+        [HttpGet]
+        // public async Task<IActionResult> GetAll([FromQuery] QueryObject query)
+        // {
+        //     if (!ModelState.IsValid)
+        //         return BadRequest(ModelState);
+        //
+        //     var posts = await _postRepo.GetAllAsync(query);
+        //
+        //     var postDto = posts.Select(p => p.ToPostDto()).ToList();
+        //
+        //     return Ok(postDto);
+        // }
+
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetById([FromRoute] int id) {
+            var post = await _postRepo.GetByIdAsync(id);
 
             if (post == null)
             {
@@ -30,12 +49,29 @@ namespace socialApi.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] CreatePostRequestDto postDto)
+        public async Task<IActionResult> Create([FromBody] CreatePostDto postDto)
         {
-            var postModel = postDto.ToPostFromDto();
-            _context.Post.Add(postModel);
-            _context.SaveChanges();
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var postModel = postDto.ToPostFromCreateDto();
+            await _context.Posts.AddAsync(postModel);
+            await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetById), new { id = postModel.Id }, postModel.ToPostDto());
+        }
+
+        [HttpDelete]
+        [Route("{id:int}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
+        {
+            var postModel = await _postRepo.DeleteAsync(id);
+
+            if (postModel == null)
+            {
+                return NotFound("Post does not exist");
+            }
+
+            return Ok(postModel);
         }
     }
 }

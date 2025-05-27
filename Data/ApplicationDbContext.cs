@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using socialApi.Models;
+using api.Models;
 
-namespace socialApi.Data
+namespace api.Data
 {
     public class ApplicationDbContext : DbContext
     {
@@ -11,10 +11,10 @@ namespace socialApi.Data
 
         }
 
-        public DbSet<Comment> Comment { get; set; }
-        public DbSet<DisplayPicture> DisplayPicture { get; set; }
-        public DbSet<Notification> Notification { get; set; }
-        public DbSet<Post> Post { get; set; }
-        public DbSet<User> User { get; set; }
+        public DbSet<Comment> Comments { get; set; }
+        public DbSet<DisplayPicture> DisplayPictures { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<Post> Posts { get; set; }
+        public DbSet<User> Users { get; set; }
     }
 }

@@ -1,7 +1,7 @@
-using socialApi.Dtos;
-using socialApi.Models;
+using api.Dtos;
+using api.Models;
 
-namespace socialApi.Mappers
+namespace api.Mappers
 {
     public static class DisplayPictureMappers
     {

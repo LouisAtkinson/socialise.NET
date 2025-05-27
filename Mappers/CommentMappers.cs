@@ -1,7 +1,7 @@
-using socialApi.Dtos;
-using socialApi.Models;
+using api.Dtos;
+using api.Models;
 
-namespace socialApi.Mappers
+namespace api.Mappers
 {
     public static class CommentMappers
     {
@@ -21,19 +21,12 @@ namespace socialApi.Mappers
             };
         }
 
-        public static Comment ToCommentModel(this CommentDto commentDto)
+        public static Comment ToCommentFromCreateDto(this CreateCommentDto commentDto)
         {
             return new Comment
             {
-                Id = commentDto.Id,
-                AuthorId = commentDto.AuthorId,
-                Author = commentDto.Author,
                 Content = commentDto.Content,
-                Date = commentDto.Date,
                 PostId = commentDto.PostId,
-                Post = commentDto.Post,
-                DisplayPictureId = commentDto.DisplayPictureId,
-                DisplayPicture = commentDto.DisplayPicture
             };
         }
     }

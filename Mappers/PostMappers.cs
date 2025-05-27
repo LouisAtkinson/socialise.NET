@@ -1,7 +1,7 @@
-using socialApi.Dtos;
-using socialApi.Models;
+using api.Dtos;
+using api.Models;
 
-namespace socialApi.Mappers
+namespace api.Mappers
 {
     public static class PostMappers
     {
@@ -16,23 +16,17 @@ namespace socialApi.Mappers
                 Recipient = postModel.Recipient,
                 Content = postModel.Content,
                 Date = postModel.Date,
-                Likes = postModel.Likes,
-                Comments = postModel.Comments
+                Likes = postModel.Likes.Select(u => u.ToUserDto()).ToList(),
+                Comments = postModel.Comments.Select(c => c.ToCommentDto()).ToList()
             };
         }
         
-        public static Post ToPostFromDto(this PostDto postDto)
+        public static Post ToPostFromCreateDto(this CreatePostDto postDto)
         {
             return new Post
             {
-                AuthorId = postDto.AuthorId,
-                Author = postDto.Author,
                 RecipientId = postDto.RecipientId,
-                Recipient = postDto.Recipient,
-                Content = postDto.Content,
-                Date = postDto.Date,
-                Likes = postDto.Likes,
-                Comments = postDto.Comments
+                Content = postDto.Content
             };
         }
     }
