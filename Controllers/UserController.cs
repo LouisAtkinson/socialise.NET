@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
-using socialApi.Data;
-using socialApi.Dtos;
-using socialApi.Models;
-using socialApi.Mappers;
+using Microsoft.EntityFrameworkCore;
+using api.Data;
+using api.Dtos;
+using api.Models;
+using api.Mappers;
 
-namespace socialApi.Controllers
+namespace api.Controllers
 {
     [Route("api/user")]
     [ApiController]
@@ -18,8 +19,9 @@ namespace socialApi.Controllers
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id) {
-            var user = _context.User.Find(id);
+        public async Task<IActionResult> GetById([FromRoute] int id) {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(x => x.Id == id);
 
             if (user == null)
             {

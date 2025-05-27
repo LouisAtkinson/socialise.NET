@@ -1,4 +1,4 @@
-namespace socialApi.Models
+namespace api.Models
 {
     public class DisplayPicture
     {

@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
-using socialApi.Data;
-using socialApi.Dtos;
-using socialApi.Models;
-using socialApi.Mappers;
+using Microsoft.EntityFrameworkCore;
+using api.Data;
+using api.Dtos;
+using api.Models;
+using api.Mappers;
 
-namespace socialApi.Controllers
+namespace api.Controllers
 {
     [Route("api/friends")]
     [ApiController]

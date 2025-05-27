@@ -1,6 +1,6 @@
-@socialApi_HostAddress = http://localhost:5116
+@api_HostAddress = http://localhost:5116
 
-GET {{socialApi_HostAddress}}/weatherforecast/
+GET {{api_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
