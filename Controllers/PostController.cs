@@ -6,6 +6,7 @@ using api.Models;
 using api.Mappers;
 using api.Repositories;
 using api.Interfaces;
+using api.Helpers;
 
 namespace api.Controllers
 {
@@ -24,17 +25,17 @@ namespace api.Controllers
         }
 
         [HttpGet]
-        // public async Task<IActionResult> GetAll([FromQuery] QueryObject query)
-        // {
-        //     if (!ModelState.IsValid)
-        //         return BadRequest(ModelState);
-        //
-        //     var posts = await _postRepo.GetAllAsync(query);
-        //
-        //     var postDto = posts.Select(p => p.ToPostDto()).ToList();
-        //
-        //     return Ok(postDto);
-        // }
+        public async Task<IActionResult> GetAll([FromQuery] QueryObject query)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var posts = await _postRepo.GetAllAsync(query);
+
+            var postDto = posts.Select(p => p.ToPostDto()).ToList();
+
+            return Ok(postDto);
+        }
 
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id) {

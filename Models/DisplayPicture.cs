@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace api.Models
 {
     public class DisplayPicture
@@ -13,6 +15,7 @@ namespace api.Models
 
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
 
+        [NotMapped]
         public ICollection<User> Likes { get; set; } = new List<User>();
     }
 }
