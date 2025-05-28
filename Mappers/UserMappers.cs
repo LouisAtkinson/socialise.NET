@@ -13,7 +13,6 @@ namespace api.Mappers
             FirstName = userModel.FirstName,
             LastName = userModel.LastName,
             Email = userModel.Email,
-            PasswordHash = userModel.PasswordHash,
             Visibility = new VisibilitySettingsDto
             {
                 Birthday = userModel.Visibility.Birthday,
@@ -39,7 +38,6 @@ namespace api.Mappers
                 FirstName = userDto.FirstName,
                 LastName = userDto.LastName,
                 Email = userDto.Email,
-                PasswordHash = userDto.PasswordHash,
                 Visibility = new VisibilitySettings
                 {
                     Birthday = userDto.Visibility.Birthday,

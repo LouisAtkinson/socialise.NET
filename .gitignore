@@ -54,4 +54,5 @@ TestResult.xml
 nunit-*.xml
 
 appsettings.Development.json
+appsettings.json
 .idea/
