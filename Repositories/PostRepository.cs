@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using api.Interfaces;
 using api.Models;
 using api.Data;
+using api.Helpers;
 
 namespace api.Repositories
 {
@@ -12,6 +13,18 @@ namespace api.Repositories
         public PostRepository(ApplicationDbContext context)
         {
             _context = context;
+        }
+
+        public async Task<List<Post>> GetAllAsync(QueryObject query)
+        {
+            var posts = _context.Posts.Include(c => c.Comments).AsQueryable();
+
+            if (!string.IsNullOrEmpty(query.UserId))
+            {
+                posts = posts.Where(post => post.AuthorId == query.UserId);
+            }
+
+            return await posts.ToListAsync();
         }
 
         public Task<Post> GetByIdAsync(int id)

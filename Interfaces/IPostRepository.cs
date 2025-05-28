@@ -1,10 +1,13 @@
 using api.Models;
+using api.Helpers;
 
 namespace api.Interfaces
 {
 	public interface IPostRepository
 	{
-		Task<Post?> GetByIdAsync(int id);
+        Task<List<Post>> GetAllAsync(QueryObject query);
+
+        Task<Post?> GetByIdAsync(int id);
 
 		Task<Post?> DeleteAsync(int id);
 
