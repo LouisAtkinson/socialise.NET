@@ -1,11 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 using api.Data;
 using api.Dtos;
 using api.Models;
 using api.Mappers;
 using api.Repositories;
 using api.Interfaces;
+using api.Helpers;
+using api.Extensions;
 
 namespace api.Controllers
 {
@@ -14,19 +18,25 @@ namespace api.Controllers
     public class CommentController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<User> _userManager;
+        private readonly ITokenService _tokenService;
+        private readonly SignInManager<User> _signinManager;
 
         private readonly ICommentRepository _commentRepo;
         private readonly IPostRepository _postRepo;
 
-        public CommentController(ApplicationDbContext context, ICommentRepository commentRepo, IPostRepository postRepo)
+        public CommentController(UserManager<User> userManager, ITokenService tokenService, SignInManager<User> signInManager, ApplicationDbContext context, ICommentRepository commentRepo, IPostRepository postRepo)
         {
             _commentRepo = commentRepo;
             _context = context;
             _postRepo = postRepo;
+            _userManager = userManager;
+            _tokenService = tokenService;
+            _signinManager = signInManager;
         }
 
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById([FromRoute] int id) {
+        public async Task<IActionResult> GetById([FromRoute] string id) {
             var comment = await _commentRepo.GetByIdAsync(id);
 
             if (comment == null)
@@ -37,34 +47,55 @@ namespace api.Controllers
             return Ok(comment.ToCommentDto());
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create([FromRoute] int postId, CreateCommentDto commentDto)
+        [HttpPost("{postId}/comments")]
+        [Authorize]
+        public async Task<IActionResult> AddComment(string postId, [FromBody] Comment comment)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var email = User.GetUserEmail();
+            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
 
-            if (!await _postRepo.PostExists(postId))
-            {
-                return BadRequest("Post does not exist");
-            }
+            if (currentUser == null) return Unauthorized("User not found.");
 
-            var commentModel = commentDto.ToCommentFromCreateDto();
-            await _commentRepo.CreateAsync(commentModel);
-            return CreatedAtAction(nameof(GetById), new { id = commentModel.Id }, commentModel.ToCommentDto());
+            var post = await _context.Posts.FirstOrDefaultAsync(p =>
+                p.Id == postId &&
+                (p.AuthorId == currentUser.Id ||
+                 p.RecipientId == currentUser.Id ||
+                 _context.Friendships.Any(f =>
+                    f.Status == FriendshipStatus.Accepted &&
+                    ((f.UserAId == currentUser.Id && f.UserBId == p.AuthorId) ||
+                     (f.UserBId == currentUser.Id && f.UserAId == p.AuthorId)))
+                ));
+
+            if (post == null) return NotFound("Post not accessible or does not exist.");
+
+            comment.AuthorId = currentUser.Id;
+            comment.PostId = postId;
+            comment.Date = DateTime.UtcNow;
+
+            _context.Comments.Add(comment);
+            await _context.SaveChangesAsync();
+
+            return Ok(comment);
         }
 
-        [HttpDelete]
-        [Route("{id:int}")]
-        public async Task<IActionResult> Delete([FromRoute] int id)
+        [HttpDelete("comments/{commentId}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteComment(string commentId)
         {
-            var commentModel = await _commentRepo.DeleteAsync(id);
+            var email = User.GetUserEmail();
+            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
 
-            if (commentModel == null)
-            {
-                return NotFound("Comment does not exist");
-            }
+            if (currentUser == null) return Unauthorized("User not found.");
 
-            return Ok(commentModel);
+            var comment = await _context.Comments.FirstOrDefaultAsync(c =>
+                c.Id == commentId && c.AuthorId == currentUser.Id);
+
+            if (comment == null) return NotFound("Comment not found or insufficient permissions.");
+
+            _context.Comments.Remove(comment);
+            await _context.SaveChangesAsync();
+
+            return Ok("Comment deleted successfully.");
         }
     }
 }
