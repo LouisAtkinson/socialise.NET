@@ -4,26 +4,18 @@ namespace api.Dtos
 {
     public class NotificationDto
     {
-        public int Id { get; set; }  
+        public string Id { get; set; }  
 
-        public int SenderId { get; set; }
-        public User? Sender { get; set; }
-
-        public int RecipientId { get; set; }
-        public User? Recipient { get; set; } 
+        public string SenderId { get; set; }
+        public string RecipientId { get; set; }
 
         public NotificationTypeDto Type { get; set; }
 
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
-        public int? PostId { get; set; }
-        public Post? Post { get; set; }
-
-        public int? CommentId { get; set; }
-        public Comment? Comment { get; set; }
-
-        public int? DisplayPictureId { get; set; }
-        public DisplayPicture? DisplayPicture { get; set; }
+        public string? PostId { get; set; }
+        public string? CommentId { get; set; }
+        public string? DisplayPictureId { get; set; }
 
         public bool IsRead { get; set; } = false;
     }

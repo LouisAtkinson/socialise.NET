@@ -15,9 +15,7 @@ namespace api.Mappers
                 Content = commentModel.Content,
                 Date = commentModel.Date,
                 PostId = commentModel.PostId,
-                Post = commentModel.Post,
-                DisplayPictureId = commentModel.DisplayPictureId,
-                DisplayPicture = commentModel.DisplayPicture
+                Post = commentModel.Post
             };
         }
 
