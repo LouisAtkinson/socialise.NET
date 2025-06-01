@@ -18,6 +18,7 @@ namespace api.Data
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Post> Posts { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<Friendship> Friendships { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -37,6 +38,18 @@ namespace api.Data
                 },
             };
             builder.Entity<IdentityRole>().HasData(roles);
+
+            builder.Entity<Friendship>()
+               .HasOne(f => f.UserA)
+               .WithMany()
+               .HasForeignKey(f => f.UserAId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Friendship>()
+                .HasOne(f => f.UserB)
+                .WithMany()
+                .HasForeignKey(f => f.UserBId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
