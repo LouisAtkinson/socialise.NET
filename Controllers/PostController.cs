@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 using api.Data;
 using api.Dtos;
 using api.Models;
 using api.Mappers;
-using api.Repositories;
 using api.Interfaces;
-using api.Helpers;
+using api.Extensions;
 
 namespace api.Controllers
 {
@@ -15,64 +16,161 @@ namespace api.Controllers
     public class PostController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<User> _userManager;
 
-        private readonly IPostRepository _postRepo;
-
-        public PostController(ApplicationDbContext context, IPostRepository postRepo)
+        public PostController(UserManager<User> userManager, ApplicationDbContext context)
         {
-            _postRepo = postRepo;
+            _userManager = userManager;
             _context = context;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] QueryObject query)
+        [HttpGet("all")]
+        [Authorize]
+        public async Task<IActionResult> GetAllPosts()
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var email = User.GetUserEmail();
+            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
 
-            var posts = await _postRepo.GetAllAsync(query);
+            if (currentUser == null) return Unauthorized("User not found.");
 
-            var postDto = posts.Select(p => p.ToPostDto()).ToList();
+            var userFriends = await _context.Friendships
+                .Where(f => (f.UserAId == currentUser.Id || f.UserBId == currentUser.Id) && f.Status == FriendshipStatus.Accepted)
+                .Select(f => f.UserAId == currentUser.Id ? f.UserBId : f.UserAId)
+                .ToListAsync();
 
-            return Ok(postDto);
+            var posts = await _context.Posts
+                .Include(p => p.Author)
+                .Include(p => p.Recipient)
+                .Include(p => p.Likes)
+                .Include(p => p.Comments)
+                .Where(p =>
+                    p.AuthorId == currentUser.Id ||
+                    (userFriends.Contains(p.AuthorId) && p.RecipientId == null) ||
+                    (userFriends.Contains(p.AuthorId) || userFriends.Contains(p.RecipientId)))
+                .ToListAsync();
+
+            return Ok(posts.Select(p => p.ToPostDto()));
         }
 
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById([FromRoute] int id) {
-            var post = await _postRepo.GetByIdAsync(id);
+        [HttpGet("user/{userId}")]
+        [Authorize]
+        public async Task<IActionResult> GetUserPosts(string userId)
+        {
+            var email = User.GetUserEmail();
+            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
 
-            if (post == null)
-            {
-                return NotFound();
-            }
+            if (currentUser == null) return Unauthorized("User not found.");
+
+            var isFriend = await _context.Friendships.AnyAsync(f =>
+                f.Status == FriendshipStatus.Accepted &&
+                ((f.UserAId == currentUser.Id && f.UserBId == userId) ||
+                 (f.UserBId == currentUser.Id && f.UserAId == userId)));
+
+            if (!isFriend && userId != currentUser.Id) return Forbid("Access denied.");
+
+            var posts = await _context.Posts
+                .Include(p => p.Author)
+                .Include(p => p.Recipient)
+                .Include(p => p.Likes)
+                .Include(p => p.Comments)
+                .Where(p => p.AuthorId == userId || p.RecipientId == userId)
+                .ToListAsync();
+
+            return Ok(posts.Select(p => p.ToPostDto()));
+        }
+
+        [HttpGet("{postId}")]
+        [Authorize]
+        public async Task<IActionResult> GetOnePost(string postId)
+        {
+            var email = User.GetUserEmail();
+            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (currentUser == null) return Unauthorized("User not found.");
+
+            var post = await _context.Posts
+                .Include(p => p.Author)
+                .Include(p => p.Recipient)
+                .Include(p => p.Likes)
+                .Include(p => p.Comments)
+                .FirstOrDefaultAsync(p =>
+                    p.Id == postId &&
+                    (p.AuthorId == currentUser.Id || p.RecipientId == currentUser.Id ||
+                     _context.Friendships.Any(f =>
+                        f.Status == FriendshipStatus.Accepted &&
+                        ((f.UserAId == currentUser.Id && f.UserBId == p.AuthorId) ||
+                         (f.UserBId == currentUser.Id && f.UserAId == p.AuthorId)))));
+
+            if (post == null) return NotFound("Post not found.");
 
             return Ok(post.ToPostDto());
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreatePostDto postDto)
+        [Authorize]
+        public async Task<IActionResult> AddPost([FromBody] CreatePostDto postDto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var email = User.GetUserEmail();
+            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
 
-            var postModel = postDto.ToPostFromCreateDto();
-            await _context.Posts.AddAsync(postModel);
+            if (currentUser == null) return Unauthorized("User not found.");
+
+            var newPost = postDto.ToPostFromCreateDto();
+            newPost.AuthorId = currentUser.Id;
+            newPost.Date = DateTime.UtcNow;
+
+            _context.Posts.Add(newPost);
             await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = postModel.Id }, postModel.ToPostDto());
+
+            return Ok(newPost.ToPostDto());
         }
 
-        [HttpDelete]
-        [Route("{id:int}")]
-        public async Task<IActionResult> Delete([FromRoute] int id)
+        [HttpPost("friend/{friendId}")]
+        [Authorize]
+        public async Task<IActionResult> PostToFriend(string friendId, [FromBody] CreatePostDto postDto)
         {
-            var postModel = await _postRepo.DeleteAsync(id);
+            var email = User.GetUserEmail();
+            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
 
-            if (postModel == null)
-            {
-                return NotFound("Post does not exist");
-            }
+            if (currentUser == null) return Unauthorized("User not found.");
 
-            return Ok(postModel);
+            var isFriend = await _context.Friendships.AnyAsync(f =>
+                f.Status == FriendshipStatus.Accepted &&
+                ((f.UserAId == currentUser.Id && f.UserBId == friendId) ||
+                 (f.UserBId == currentUser.Id && f.UserAId == friendId)));
+
+            if (!isFriend) return Forbid("Recipient must be a friend.");
+
+            var newPost = postDto.ToPostFromCreateDto();
+            newPost.AuthorId = currentUser.Id;
+            newPost.RecipientId = friendId;
+            newPost.Date = DateTime.UtcNow;
+
+            _context.Posts.Add(newPost);
+            await _context.SaveChangesAsync();
+
+            return Ok(newPost.ToPostDto());
+        }
+
+        [HttpDelete("{postId}")]
+        [Authorize]
+        public async Task<IActionResult> DeletePost(string postId)
+        {
+            var email = User.GetUserEmail();
+            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (currentUser == null) return Unauthorized("User not found.");
+
+            var post = await _context.Posts.FirstOrDefaultAsync(p =>
+                p.Id == postId &&
+                (p.AuthorId == currentUser.Id || p.RecipientId == currentUser.Id));
+
+            if (post == null) return NotFound("Post not found or insufficient permissions.");
+
+            _context.Posts.Remove(post);
+            await _context.SaveChangesAsync();
+
+            return Ok("Post deleted successfully.");
         }
     }
 }

@@ -27,13 +27,13 @@ namespace api.Repositories
             return await posts.ToListAsync();
         }
 
-        public Task<Post> GetByIdAsync(int id)
+        public Task<Post> GetByIdAsync(string id)
         {
             return _context.Posts.Include(c => c.Comments)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 
-        public async Task<Post?> DeleteAsync(int id)
+        public async Task<Post?> DeleteAsync(string id)
         {
             var postModel = await _context.Posts.FirstOrDefaultAsync(x => x.Id == id);
 
@@ -47,7 +47,7 @@ namespace api.Repositories
             return postModel;
         }
 
-        public Task<bool> PostExists(int id)
+        public Task<bool> PostExists(string id)
         {
             return _context.Posts.AnyAsync(x => x.Id == id);
         }
