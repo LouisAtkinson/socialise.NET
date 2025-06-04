@@ -44,6 +44,7 @@ namespace api.Controllers
             return Ok(
                 new NewUserDto
                 {
+                    Id = user.Id,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
                     Email = user.Email,
@@ -64,7 +65,8 @@ namespace api.Controllers
                 {
                     FirstName = registerDto.FirstName,
                     LastName = registerDto.LastName,
-                    Email = registerDto.Email
+                    Email = registerDto.Email.ToLower(),
+                    UserName = registerDto.Email.ToLower()
                 };
 
                 var createdUser = await _userManager.CreateAsync(user, registerDto.Password);
@@ -77,6 +79,7 @@ namespace api.Controllers
                         return Ok(
                             new NewUserDto
                             {
+                                Id= user.Id,
                                 FirstName = user.FirstName,
                                 LastName = user.LastName,
                                 Email = user.Email,
