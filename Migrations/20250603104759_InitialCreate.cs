@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace socialApi.Migrations
 {
     /// <inheritdoc />
-    public partial class AddImageDataToDisplayPicture : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -29,17 +29,33 @@ namespace socialApi.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "IdentityRole<int>",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "text", nullable: true),
+                    NormalizedName = table.Column<string>(type: "text", nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_IdentityRole<int>", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Notifications",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     SenderId = table.Column<string>(type: "text", nullable: false),
                     RecipientId = table.Column<string>(type: "text", nullable: false),
                     Type = table.Column<int>(type: "integer", nullable: false),
                     Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    PostId = table.Column<string>(type: "text", nullable: true),
-                    CommentId = table.Column<string>(type: "text", nullable: true),
-                    DisplayPictureId = table.Column<string>(type: "text", nullable: true),
+                    PostId = table.Column<int>(type: "integer", nullable: true),
+                    CommentId = table.Column<int>(type: "integer", nullable: true),
+                    DisplayPictureId = table.Column<int>(type: "integer", nullable: true),
                     IsRead = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
@@ -122,8 +138,8 @@ namespace socialApi.Migrations
                     Id = table.Column<string>(type: "text", nullable: false),
                     FirstName = table.Column<string>(type: "text", nullable: false),
                     LastName = table.Column<string>(type: "text", nullable: false),
-                    DisplayPictureId = table.Column<string>(type: "text", nullable: true),
-                    PostId = table.Column<string>(type: "text", nullable: true),
+                    DisplayPictureId = table.Column<int>(type: "integer", nullable: true),
+                    PostId = table.Column<int>(type: "integer", nullable: true),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -168,7 +184,8 @@ namespace socialApi.Migrations
                 name: "DisplayPictures",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UserId = table.Column<string>(type: "text", nullable: false),
                     Filename = table.Column<string>(type: "text", nullable: false),
                     UploadDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -189,7 +206,8 @@ namespace socialApi.Migrations
                 name: "Friendships",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UserAId = table.Column<string>(type: "text", nullable: false),
                     UserBId = table.Column<string>(type: "text", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false)
@@ -215,7 +233,8 @@ namespace socialApi.Migrations
                 name: "Posts",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     AuthorId = table.Column<string>(type: "text", nullable: false),
                     RecipientId = table.Column<string>(type: "text", nullable: true),
                     Content = table.Column<string>(type: "text", nullable: false),
@@ -241,12 +260,13 @@ namespace socialApi.Migrations
                 name: "Comments",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     AuthorId = table.Column<string>(type: "text", nullable: false),
                     Content = table.Column<string>(type: "text", nullable: false),
                     Date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    PostId = table.Column<string>(type: "text", nullable: false),
-                    DisplayPictureId = table.Column<string>(type: "text", nullable: true)
+                    PostId = table.Column<int>(type: "integer", nullable: false),
+                    DisplayPictureId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -271,12 +291,12 @@ namespace socialApi.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "AspNetRoles",
+                table: "IdentityRole<int>",
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
                 values: new object[,]
                 {
-                    { "0b39cedb-f375-4459-bb24-d48786bc0bd5", null, "User", "USER" },
-                    { "89240e7d-247a-4549-9dce-4b15c31d7a27", null, "Admin", "ADMIN" }
+                    { 1, null, "Admin", "ADMIN" },
+                    { 2, null, "User", "USER" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -440,6 +460,9 @@ namespace socialApi.Migrations
 
             migrationBuilder.DropTable(
                 name: "Friendships");
+
+            migrationBuilder.DropTable(
+                name: "IdentityRole<int>");
 
             migrationBuilder.DropTable(
                 name: "Notifications");

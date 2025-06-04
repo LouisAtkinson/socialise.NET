@@ -4,7 +4,7 @@ namespace api.Dtos
 {
     public class DisplayPictureDto
     {
-        public string Id { get; set; } 
+        public int Id { get; set; } 
 
         public string UserId { get; set; }
         public User? User { get; set; }
@@ -15,6 +15,6 @@ namespace api.Dtos
 
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
 
-        public ICollection<User> Likes { get; set; } = new List<User>();
+        public List<UserMinimalDto> Likes { get; set; } = new List<UserMinimalDto>();
     }
 }

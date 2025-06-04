@@ -2,7 +2,7 @@ namespace api.Models
 {
     public class Comment
     {
-        public string Id { get; set; }
+        public int Id { get; set; }
 
         public string AuthorId { get; set; }
         public User? Author { get; set; }
@@ -11,7 +11,7 @@ namespace api.Models
 
         public DateTime Date { get; set; } = DateTime.UtcNow;
 
-        public string PostId { get; set; }
+        public int PostId { get; set; }
         public Post? Post { get; set; }
     }
 }

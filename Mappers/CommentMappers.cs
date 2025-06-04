@@ -11,11 +11,10 @@ namespace api.Mappers
             {
                 Id = commentModel.Id,
                 AuthorId = commentModel.AuthorId,
-                Author = commentModel.Author,
+                Author = commentModel.Author?.ToUserSummaryDto(),
                 Content = commentModel.Content,
                 Date = commentModel.Date,
-                PostId = commentModel.PostId,
-                Post = commentModel.Post
+                PostId = commentModel.PostId
             };
         }
 

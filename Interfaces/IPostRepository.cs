@@ -7,10 +7,10 @@ namespace api.Interfaces
 	{
         Task<List<Post>> GetAllAsync(QueryObject query);
 
-        Task<Post?> GetByIdAsync(string id);
+        Task<Post?> GetByIdAsync(int id);
 
-		Task<Post?> DeleteAsync(string id);
+		Task<Post?> DeleteAsync(int id);
 
-		Task<bool> PostExists(string id);
+		Task<bool> PostExists(int id);
 	}
 }

@@ -15,7 +15,7 @@ namespace api.Mappers
                 Filename = displayPictureModel.Filename,
                 UploadDate = displayPictureModel.UploadDate,
                 Comments = displayPictureModel.Comments,
-                Likes = displayPictureModel.Likes
+                Likes = displayPictureModel.Likes.Select(u => u.ToUserMinimalDto()).ToList()
             };
         }
 
@@ -26,9 +26,7 @@ namespace api.Mappers
                 UserId = displayPictureDto.UserId,
                 User = displayPictureDto.User,
                 Filename = displayPictureDto.Filename,
-                UploadDate = displayPictureDto.UploadDate,
-                Comments = displayPictureDto.Comments,
-                Likes = displayPictureDto.Likes
+                UploadDate = displayPictureDto.UploadDate
             };
         }
     }

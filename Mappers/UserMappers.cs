@@ -22,7 +22,28 @@ namespace api.Mappers
             {
                 FirstName = userDto.FirstName,
                 LastName = userDto.LastName,
-                Email = userDto.Email
+                Email = userDto.Email,
+                UserName = userDto.Email
+            };
+        }
+
+        public static UserSummaryDto ToUserSummaryDto(this User user)
+        {
+            return new UserSummaryDto
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName
+            };
+        }
+
+        public static UserMinimalDto ToUserMinimalDto(this User user)
+        {
+            return new UserMinimalDto
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName
             };
         }
     }

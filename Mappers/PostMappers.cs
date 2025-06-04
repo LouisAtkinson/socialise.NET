@@ -11,12 +11,12 @@ namespace api.Mappers
             {
                 Id = postModel.Id,
                 AuthorId = postModel.AuthorId,
-                Author = postModel.Author,
+                Author = postModel.Author?.ToUserSummaryDto(),
                 RecipientId = postModel.RecipientId,
-                Recipient = postModel.Recipient,
+                Recipient = postModel.Recipient?.ToUserSummaryDto(),
                 Content = postModel.Content,
                 Date = postModel.Date,
-                Likes = postModel.Likes.Select(u => u.ToUserDto()).ToList(),
+                Likes = postModel.Likes.Select(u => u.ToUserMinimalDto()).ToList(),
                 Comments = postModel.Comments.Select(c => c.ToCommentDto()).ToList()
             };
         }

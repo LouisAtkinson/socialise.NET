@@ -4,7 +4,7 @@ namespace api.Dtos
 {
     public class NotificationDto
     {
-        public string Id { get; set; }  
+        public int Id { get; set; }  
 
         public string SenderId { get; set; }
         public string RecipientId { get; set; }
@@ -13,9 +13,9 @@ namespace api.Dtos
 
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
-        public string? PostId { get; set; }
-        public string? CommentId { get; set; }
-        public string? DisplayPictureId { get; set; }
+        public int? PostId { get; set; }
+        public int? CommentId { get; set; }
+        public int? DisplayPictureId { get; set; }
 
         public bool IsRead { get; set; } = false;
     }
