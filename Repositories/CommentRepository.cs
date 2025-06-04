@@ -14,7 +14,7 @@ namespace api.Repositories
             _context = context;
         }
 
-        public Task<Comment?> GetByIdAsync(string id)
+        public Task<Comment?> GetByIdAsync(int id)
         {
             return _context.Comments
                 .FirstOrDefaultAsync(x => x.Id == id);
@@ -27,7 +27,7 @@ namespace api.Repositories
             return commentModel;
         }
 
-        public async Task<Comment?> DeleteAsync(string id)
+        public async Task<Comment?> DeleteAsync(int id)
         {
             var commentModel = await _context.Comments.FirstOrDefaultAsync(x => x.Id == id);
 

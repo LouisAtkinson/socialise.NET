@@ -36,7 +36,7 @@ namespace api.Controllers
         }
 
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById([FromRoute] string id) {
+        public async Task<IActionResult> GetById([FromRoute] int id) {
             var comment = await _commentRepo.GetByIdAsync(id);
 
             if (comment == null)
@@ -49,41 +49,45 @@ namespace api.Controllers
 
         [HttpPost("{postId}/comments")]
         [Authorize]
-        public async Task<IActionResult> AddComment(string postId, [FromBody] Comment comment)
+        public async Task<IActionResult> AddComment(int postId, [FromBody] CreateCommentDto commentDto)
         {
-            var email = User.GetUserEmail();
-            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var currentUserId = User.GetUserId();
+            var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
             if (currentUser == null) return Unauthorized("User not found.");
 
             var post = await _context.Posts.FirstOrDefaultAsync(p =>
                 p.Id == postId &&
                 (p.AuthorId == currentUser.Id ||
-                 p.RecipientId == currentUser.Id ||
-                 _context.Friendships.Any(f =>
+                p.RecipientId == currentUser.Id ||
+                _context.Friendships.Any(f =>
                     f.Status == FriendshipStatus.Accepted &&
                     ((f.UserAId == currentUser.Id && f.UserBId == p.AuthorId) ||
-                     (f.UserBId == currentUser.Id && f.UserAId == p.AuthorId)))
+                    (f.UserBId == currentUser.Id && f.UserAId == p.AuthorId)))
                 ));
 
             if (post == null) return NotFound("Post not accessible or does not exist.");
 
-            comment.AuthorId = currentUser.Id;
-            comment.PostId = postId;
-            comment.Date = DateTime.UtcNow;
+            var comment = new Comment
+            {
+                AuthorId = currentUser.Id,
+                PostId = postId,                
+                Content = commentDto.Content,   
+                Date = DateTime.UtcNow
+            };
 
             _context.Comments.Add(comment);
             await _context.SaveChangesAsync();
 
-            return Ok(comment);
+            return Ok(comment.ToCommentDto());
         }
 
         [HttpDelete("comments/{commentId}")]
         [Authorize]
-        public async Task<IActionResult> DeleteComment(string commentId)
+        public async Task<IActionResult> DeleteComment(int commentId)
         {
-            var email = User.GetUserEmail();
-            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var currentUserId = User.GetUserId();
+            var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
             if (currentUser == null) return Unauthorized("User not found.");
 
