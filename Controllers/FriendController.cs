@@ -28,13 +28,15 @@ namespace api.Controllers
             _context = context;
         }
 
-        [HttpPost("friends/request")]
+        [HttpPost("request")]
         [Authorize]
-        public async Task<IActionResult> SendFriendRequest(string recipientEmail)
+        public async Task<IActionResult> SendFriendRequest(string recipientUserId)
         {
-            var senderEmail = User.GetUserEmail();
-            var sender = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == senderEmail.ToLower());
-            var recipient = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == recipientEmail.ToLower());
+            var senderUserId = User.GetUserId();
+            if (string.IsNullOrEmpty(senderUserId)) return Unauthorized();
+
+            var sender = await _userManager.FindByIdAsync(senderUserId);
+            var recipient = await _userManager.FindByIdAsync(recipientUserId);
 
             if (recipient == null) return NotFound("Recipient not found!");
 
@@ -59,20 +61,19 @@ namespace api.Controllers
             return Ok("Friend request sent successfully!");
         }
 
-        [HttpPost("friends/accept")]
+        [HttpPost("accept")]
         [Authorize]
-        public async Task<IActionResult> AcceptFriendRequest(string friendshipId)
+        public async Task<IActionResult> AcceptFriendRequest(int friendshipId)
         {
-            var email = User.GetUserEmail();
-            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email.ToLower());
+            var currentUserId = User.GetUserId();
+            if (string.IsNullOrEmpty(currentUserId)) return Unauthorized();
 
             var friendship = await _context.Friendships.FirstOrDefaultAsync(f =>
-                f.Id == friendshipId && f.UserBId == currentUser.Id && f.Status == FriendshipStatus.Pending);
+                f.Id == friendshipId && f.UserBId == currentUserId && f.Status == FriendshipStatus.Pending);
 
             if (friendship == null) return NotFound("Friend request not found!");
 
             friendship.Status = FriendshipStatus.Accepted;
-
             await _context.SaveChangesAsync();
 
             return Ok("Friend request accepted!");
@@ -82,16 +83,13 @@ namespace api.Controllers
         [Authorize]
         public async Task<IActionResult> GetFriends()
         {
-            var email = User.GetUserEmail();
-            if (string.IsNullOrEmpty(email)) return Unauthorized();
-
-            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
-            if (currentUser == null) return Unauthorized();
+            var currentUserId = User.GetUserId();
+            if (string.IsNullOrEmpty(currentUserId)) return Unauthorized();
 
             var friendships = await _context.Friendships
                 .Include(f => f.UserA)
                 .Include(f => f.UserB)
-                .Where(f => (f.UserAId == currentUser.Id || f.UserBId == currentUser.Id) && f.Status == FriendshipStatus.Accepted)
+                .Where(f => (f.UserAId == currentUserId || f.UserBId == currentUserId) && f.Status == FriendshipStatus.Accepted)
                 .ToListAsync();
 
             var friendDtos = friendships.Select(f => f.ToFriendshipDto());
@@ -100,22 +98,20 @@ namespace api.Controllers
         }
 
         [HttpPost("reject")]
-        public async Task<IActionResult> RejectFriendship(string friendshipId)
+        [Authorize]
+        public async Task<IActionResult> RejectFriendship(int friendshipId)
         {
-            var email = User.GetUserEmail();
-            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email.ToLower());
-            var userId = currentUser?.Id;
-
-            if (userId == null) return Unauthorized();
+            var currentUserId = User.GetUserId();
+            if (string.IsNullOrEmpty(currentUserId)) return Unauthorized();
 
             var friendship = await _context.Friendships
                 .FirstOrDefaultAsync(f => f.Id == friendshipId &&
-                    (f.UserBId == userId || f.UserAId == userId));
+                    (f.UserBId == currentUserId || f.UserAId == currentUserId));
 
             if (friendship == null)
                 return NotFound("Friendship not found.");
 
-            if (friendship.Status == FriendshipStatus.Pending && friendship.UserBId == userId)
+            if (friendship.Status == FriendshipStatus.Pending && friendship.UserBId == currentUserId)
             {
                 _context.Friendships.Remove(friendship);
                 await _context.SaveChangesAsync();
@@ -126,17 +122,15 @@ namespace api.Controllers
         }
 
         [HttpDelete("delete")]
-        public async Task<IActionResult> DeleteFriendship(string friendshipId)
+        [Authorize]
+        public async Task<IActionResult> DeleteFriendship(int friendshipId)
         {
-            var email = User.GetUserEmail();
-            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email.ToLower());
-            var userId = currentUser?.Id;
-
-            if (userId == null) return Unauthorized();
+            var currentUserId = User.GetUserId();
+            if (string.IsNullOrEmpty(currentUserId)) return Unauthorized();
 
             var friendship = await _context.Friendships
                 .FirstOrDefaultAsync(f => f.Id == friendshipId &&
-                    (f.UserAId == userId || f.UserBId == userId));
+                    (f.UserAId == currentUserId || f.UserBId == currentUserId));
 
             if (friendship == null)
                 return NotFound("Friendship not found.");

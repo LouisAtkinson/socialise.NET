@@ -27,8 +27,8 @@ namespace api.Controllers
         [Authorize]
         public async Task<IActionResult> UploadDisplayPicture([FromBody] DisplayPictureDto displayPictureDto)
         {
-            var email = User.GetUserEmail();
-            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var currentUserId = User.GetUserId();
+            var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
             if (currentUser == null) return Unauthorized("User not found.");
 
@@ -58,7 +58,7 @@ namespace api.Controllers
 
         [HttpGet("{id}/details")]
         [Authorize]
-        public async Task<IActionResult> GetDisplayPictureDetails(string id)
+        public async Task<IActionResult> GetDisplayPictureDetails(int id)
         {
             var displayPicture = await _context.DisplayPictures
                 .Include(dp => dp.User)
@@ -74,10 +74,10 @@ namespace api.Controllers
 
         [HttpPost("{id}/like")]
         [Authorize]
-        public async Task<IActionResult> LikeDisplayPicture(string id)
+        public async Task<IActionResult> LikeDisplayPicture(int id)
         {
-            var email = User.GetUserEmail();
-            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var currentUserId = User.GetUserId();
+            var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
             if (currentUser == null) return Unauthorized("User not found.");
 
@@ -96,10 +96,10 @@ namespace api.Controllers
 
         [HttpPost("{id}/unlike")]
         [Authorize]
-        public async Task<IActionResult> UnlikeDisplayPicture(string id)
+        public async Task<IActionResult> UnlikeDisplayPicture(int id)
         {
-            var email = User.GetUserEmail();
-            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var currentUserId = User.GetUserId();
+            var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
             if (currentUser == null) return Unauthorized("User not found.");
 
@@ -118,10 +118,10 @@ namespace api.Controllers
 
         [HttpPost("{id}/comment")]
         [Authorize]
-        public async Task<IActionResult> CommentOnDisplayPicture(string id, [FromBody] string commentText)
+        public async Task<IActionResult> CommentOnDisplayPicture(int id, [FromBody] string commentText)
         {
-            var email = User.GetUserEmail();
-            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var currentUserId = User.GetUserId();
+            var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
             if (currentUser == null) return Unauthorized("User not found.");
 
@@ -144,10 +144,10 @@ namespace api.Controllers
 
         [HttpDelete("{id}/comment/{commentId}")]
         [Authorize]
-        public async Task<IActionResult> RemoveComment(string id, string commentId)
+        public async Task<IActionResult> RemoveComment(int id, int commentId)
         {
-            var email = User.GetUserEmail();
-            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var currentUserId = User.GetUserId();
+            var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
             if (currentUser == null) return Unauthorized("User not found.");
 
