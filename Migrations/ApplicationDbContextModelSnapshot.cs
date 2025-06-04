@@ -50,13 +50,15 @@ namespace socialApi.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "89240e7d-247a-4549-9dce-4b15c31d7a27",
+                            Id = "1",
+                            ConcurrencyStamp = "1",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = "0b39cedb-f375-4459-bb24-d48786bc0bd5",
+                            Id = "2",
+                            ConcurrencyStamp = "2",
                             Name = "User",
                             NormalizedName = "USER"
                         });
@@ -170,8 +172,11 @@ namespace socialApi.Migrations
 
             modelBuilder.Entity("api.Models.Comment", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AuthorId")
                         .IsRequired()
@@ -184,12 +189,11 @@ namespace socialApi.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("DisplayPictureId")
-                        .HasColumnType("text");
+                    b.Property<int?>("DisplayPictureId")
+                        .HasColumnType("integer");
 
-                    b.Property<string>("PostId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("PostId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -204,8 +208,11 @@ namespace socialApi.Migrations
 
             modelBuilder.Entity("api.Models.DisplayPicture", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Filename")
                         .IsRequired()
@@ -231,8 +238,11 @@ namespace socialApi.Migrations
 
             modelBuilder.Entity("api.Models.Friendship", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -256,20 +266,23 @@ namespace socialApi.Migrations
 
             modelBuilder.Entity("api.Models.Notification", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
 
-                    b.Property<string>("CommentId")
-                        .HasColumnType("text");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("DisplayPictureId")
-                        .HasColumnType("text");
+                    b.Property<int?>("CommentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("DisplayPictureId")
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsRead")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("PostId")
-                        .HasColumnType("text");
+                    b.Property<int?>("PostId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("RecipientId")
                         .IsRequired()
@@ -292,8 +305,11 @@ namespace socialApi.Migrations
 
             modelBuilder.Entity("api.Models.Post", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AuthorId")
                         .IsRequired()
@@ -330,8 +346,8 @@ namespace socialApi.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("text");
 
-                    b.Property<string>("DisplayPictureId")
-                        .HasColumnType("text");
+                    b.Property<int?>("DisplayPictureId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -371,8 +387,8 @@ namespace socialApi.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("PostId")
-                        .HasColumnType("text");
+                    b.Property<int?>("PostId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");

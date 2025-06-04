@@ -7,17 +7,15 @@ namespace api.Data
 {
     public class ApplicationDbContext : IdentityDbContext<User>
     {
-        public ApplicationDbContext(DbContextOptions dbContextOptions)
-        : base(dbContextOptions)
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        : base(options)
         {
-
         }
 
         public DbSet<Comment> Comments { get; set; }
         public DbSet<DisplayPicture> DisplayPictures { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Post> Posts { get; set; }
-        public DbSet<User> Users { get; set; }
         public DbSet<Friendship> Friendships { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -28,13 +26,17 @@ namespace api.Data
             {
                 new IdentityRole
                 {
+                    Id = "1",  
                     Name = "Admin",
-                    NormalizedName = "ADMIN"
+                    NormalizedName = "ADMIN",
+                    ConcurrencyStamp = "1"  
                 },
                 new IdentityRole
                 {
+                    Id = "2",
                     Name = "User",
-                    NormalizedName = "USER"
+                    NormalizedName = "USER",
+                    ConcurrencyStamp = "2"  
                 },
             };
             builder.Entity<IdentityRole>().HasData(roles);

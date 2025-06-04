@@ -17,19 +17,21 @@ namespace api.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<User> _userManager;
+        private readonly INotificationRepository _notificationService;
 
-        public PostController(UserManager<User> userManager, ApplicationDbContext context)
+        public PostController(UserManager<User> userManager, ApplicationDbContext context, INotificationRepository notificationService)
         {
             _userManager = userManager;
             _context = context;
+            _notificationService = notificationService;
         }
 
         [HttpGet("all")]
         [Authorize]
         public async Task<IActionResult> GetAllPosts()
         {
-            var email = User.GetUserEmail();
-            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var currentUserId = User.GetUserId();
+            var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
             if (currentUser == null) return Unauthorized("User not found.");
 
@@ -56,8 +58,8 @@ namespace api.Controllers
         [Authorize]
         public async Task<IActionResult> GetUserPosts(string userId)
         {
-            var email = User.GetUserEmail();
-            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var currentUserId = User.GetUserId();
+            var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
             if (currentUser == null) return Unauthorized("User not found.");
 
@@ -81,10 +83,10 @@ namespace api.Controllers
 
         [HttpGet("{postId}")]
         [Authorize]
-        public async Task<IActionResult> GetOnePost(string postId)
+        public async Task<IActionResult> GetOnePost(int postId)
         {
-            var email = User.GetUserEmail();
-            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var currentUserId = User.GetUserId();
+            var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
             if (currentUser == null) return Unauthorized("User not found.");
 
@@ -110,8 +112,8 @@ namespace api.Controllers
         [Authorize]
         public async Task<IActionResult> AddPost([FromBody] CreatePostDto postDto)
         {
-            var email = User.GetUserEmail();
-            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var currentUserId = User.GetUserId();
+            var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
             if (currentUser == null) return Unauthorized("User not found.");
 
@@ -129,8 +131,8 @@ namespace api.Controllers
         [Authorize]
         public async Task<IActionResult> PostToFriend(string friendId, [FromBody] CreatePostDto postDto)
         {
-            var email = User.GetUserEmail();
-            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var currentUserId = User.GetUserId();
+            var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
             if (currentUser == null) return Unauthorized("User not found.");
 
@@ -149,15 +151,26 @@ namespace api.Controllers
             _context.Posts.Add(newPost);
             await _context.SaveChangesAsync();
 
+            var notification = new Notification
+            {
+                SenderId = currentUser.Id,
+                RecipientId = friendId,
+                Type = NotificationType.PostFromFriend,
+                Timestamp = DateTime.UtcNow,
+                PostId = newPost.Id
+            };
+
+            await _notificationService.AddAsync(notification);
+
             return Ok(newPost.ToPostDto());
         }
 
         [HttpDelete("{postId}")]
         [Authorize]
-        public async Task<IActionResult> DeletePost(string postId)
+        public async Task<IActionResult> DeletePost(int postId)
         {
-            var email = User.GetUserEmail();
-            var currentUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var currentUserId = User.GetUserId();
+            var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
             if (currentUser == null) return Unauthorized("User not found.");
 
@@ -171,6 +184,62 @@ namespace api.Controllers
             await _context.SaveChangesAsync();
 
             return Ok("Post deleted successfully.");
+        }
+
+        [HttpPost("{id}/like")]
+        [Authorize]
+        public async Task<IActionResult> LikePost(int id)
+        {
+            var currentUserId = User.GetUserId();
+            var currentUser = await _userManager.FindByIdAsync(currentUserId);
+
+            if (currentUser == null) return Unauthorized("User not found.");
+
+            var post = await _context.Posts.Include(p => p.Likes).FirstOrDefaultAsync(p => p.Id == id);
+            if (post == null) return NotFound("Post not found.");
+
+            if (!post.Likes.Contains(currentUser))
+            {
+                post.Likes.Add(currentUser);
+                await _context.SaveChangesAsync();
+
+                if (currentUser.Id != post.AuthorId)
+                {
+                    var notification = new Notification
+                    {
+                        SenderId = currentUser.Id,
+                        RecipientId = post.AuthorId,
+                        Type = NotificationType.PostLike,
+                        Timestamp = DateTime.UtcNow,
+                        PostId = post.Id
+                    };
+
+                    await _notificationService.AddAsync(notification);
+                }
+            }
+
+            return Ok("Post liked.");
+        }
+
+        [HttpPost("{id}/unlike")]
+        [Authorize]
+        public async Task<IActionResult> UnlikePost(int id)
+        {
+            var currentUserId = User.GetUserId();
+            var currentUser = await _userManager.FindByIdAsync(currentUserId);
+
+            if (currentUser == null) return Unauthorized("User not found.");
+
+            var post = await _context.Posts.Include(p => p.Likes).FirstOrDefaultAsync(p => p.Id == id);
+            if (post == null) return NotFound("Post not found.");
+
+            if (post.Likes.Contains(currentUser))
+            {
+                post.Likes.Remove(currentUser);
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok("Post unliked.");
         }
     }
 }
