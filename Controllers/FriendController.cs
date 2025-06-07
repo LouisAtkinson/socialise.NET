@@ -30,6 +30,40 @@ namespace api.Controllers
             _notificationService = notificationService;
         }
 
+        [HttpGet("all/{id}")]
+        [Authorize]
+        public async Task<IActionResult> GetFriends([FromRoute] string id)
+        {
+            var userExists = await _context.Users.AnyAsync(u => u.Id == id);
+            if (!userExists) return NotFound(new { error = "User not found." });
+
+            var friendships = await _context.Friendships
+                .Where(f => (f.UserAId == id || f.UserBId == id) && f.Status == FriendshipStatus.Accepted)
+                .Select(f => f.UserAId == id ? f.UserB : f.UserA) 
+                .ToListAsync();
+
+            var friends = friendships.Select(friend => friend.ToUserMinimalDto()).ToList();
+
+            return Ok(friends);
+        }
+
+        [HttpGet("status/{loggedInUserId}/{otherUserId}")]
+        [Authorize]
+        public async Task<IActionResult> GetFriendshipStatus(string loggedInUserId, string otherUserId)
+        {
+            var currentUserId = User.GetUserId();
+            if (currentUserId != loggedInUserId) return Unauthorized();
+
+            var friendship = await _context.Friendships
+                .FirstOrDefaultAsync(f =>
+                    (f.UserAId == loggedInUserId && f.UserBId == otherUserId) ||
+                    (f.UserAId == otherUserId && f.UserBId == loggedInUserId));
+
+            var dto = friendship.ToFriendshipStatusDto(loggedInUserId);
+
+            return Ok(dto);
+        }
+
         [HttpPost("request")]
         [Authorize]
         public async Task<IActionResult> SendFriendRequest(string recipientUserId)
@@ -109,25 +143,6 @@ namespace api.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Friend request accepted!" });
-        }
-
-
-        [HttpGet]
-        [Authorize]
-        public async Task<IActionResult> GetFriends()
-        {
-            var currentUserId = User.GetUserId();
-            if (string.IsNullOrEmpty(currentUserId)) return Unauthorized();
-
-            var friendships = await _context.Friendships
-                .Include(f => f.UserA)
-                .Include(f => f.UserB)
-                .Where(f => (f.UserAId == currentUserId || f.UserBId == currentUserId) && f.Status == FriendshipStatus.Accepted)
-                .ToListAsync();
-
-            var friendDtos = friendships.Select(f => f.ToFriendshipDto());
-
-            return Ok(friendDtos);
         }
 
         [HttpPost("reject")]

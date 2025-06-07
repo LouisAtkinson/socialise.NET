@@ -16,5 +16,39 @@ namespace api.Mappers
                 Status = friendshipModel.Status.ToString()
             };
         }
+
+        public static FriendshipStatusDto ToFriendshipStatusDto(
+            this Friendship? friendship, 
+            string loggedInUserId)
+        {
+            if (friendship == null)
+            {
+                return new FriendshipStatusDto
+                {
+                    AreFriends = false,
+                    HasPendingRequestFromLoggedInUser = false,
+                    HasPendingRequestFromOtherUser = false,
+                    FriendshipId = null
+                };
+            }
+
+            var areFriends = friendship.Status == FriendshipStatus.Accepted;
+
+            bool hasPendingFromLoggedInUser = 
+                friendship.Status == FriendshipStatus.Pending &&
+                friendship.UserAId == loggedInUserId;
+
+            bool hasPendingFromOtherUser =
+                friendship.Status == FriendshipStatus.Pending &&
+                friendship.UserBId == loggedInUserId;
+
+            return new FriendshipStatusDto
+            {
+                AreFriends = areFriends,
+                HasPendingRequestFromLoggedInUser = hasPendingFromLoggedInUser,
+                HasPendingRequestFromOtherUser = hasPendingFromOtherUser,
+                FriendshipId = friendship.Id
+            };
+        }
     }
 }
