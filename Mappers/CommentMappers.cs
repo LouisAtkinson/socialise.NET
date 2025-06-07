@@ -14,7 +14,9 @@ namespace api.Mappers
                 Author = commentModel.Author?.ToUserSummaryDto(),
                 Content = commentModel.Content,
                 Date = commentModel.Date,
-                PostId = commentModel.PostId
+                PostId = commentModel.PostId,
+                DisplayPictureId = commentModel.DisplayPictureId,
+                Likes = commentModel.Likes.Select(u => u.ToUserMinimalDto()).ToList(),
             };
         }
 

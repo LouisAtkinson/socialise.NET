@@ -7,6 +7,6 @@ namespace api.Dtos
         public string Id { get; set; }
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
-        public DisplayPicture? DisplayPicture { get; set; }
+        public int? DisplayPictureId { get; set; }
     }
 }

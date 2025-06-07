@@ -41,6 +41,17 @@ namespace api.Data
             };
             builder.Entity<IdentityRole>().HasData(roles);
 
+            builder.Entity<User>()
+                .HasOne(u => u.DisplayPicture)
+                .WithOne(dp => dp.User)
+                .HasForeignKey<DisplayPicture>(dp => dp.UserId)
+                .OnDelete(DeleteBehavior.Cascade); 
+
+            builder.Entity<DisplayPicture>()
+                .HasMany(dp => dp.Likes)
+                .WithMany()
+                .UsingEntity(j => j.ToTable("DisplayPictureLikes"));
+
             builder.Entity<Friendship>()
                .HasOne(f => f.UserA)
                .WithMany()

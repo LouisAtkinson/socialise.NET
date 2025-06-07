@@ -33,7 +33,8 @@ namespace api.Mappers
             {
                 Id = user.Id,
                 FirstName = user.FirstName,
-                LastName = user.LastName
+                LastName = user.LastName,
+                DisplayPictureId = user.DisplayPicture?.Id
             };
         }
 

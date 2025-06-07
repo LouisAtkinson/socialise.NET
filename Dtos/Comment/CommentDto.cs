@@ -13,7 +13,9 @@ namespace api.Dtos
 
         public DateTime Date { get; set; } = DateTime.UtcNow;
 
-        public int PostId { get; set; }
+        public int? PostId { get; set; }
+        public int? DisplayPictureId { get; set; }
         public Post? Post { get; set; }
+        public List<UserMinimalDto> Likes { get; set; } = new List<UserMinimalDto>();
     }
 }

@@ -25,7 +25,6 @@ namespace api.Mappers
         {
             return new Post
             {
-                RecipientId = postDto.RecipientId,
                 Content = postDto.Content
             };
         }

@@ -11,10 +11,9 @@ namespace api.Mappers
             {
                 Id = displayPictureModel.Id,
                 UserId = displayPictureModel.UserId,
-                User = displayPictureModel.User,
-                Filename = displayPictureModel.Filename,
+                User = displayPictureModel.User?.ToUserMinimalDto(),
                 UploadDate = displayPictureModel.UploadDate,
-                Comments = displayPictureModel.Comments,
+                Comments = displayPictureModel.Comments.Select(c => c.ToCommentDto()).ToList(),
                 Likes = displayPictureModel.Likes.Select(u => u.ToUserMinimalDto()).ToList()
             };
         }
@@ -23,10 +22,9 @@ namespace api.Mappers
         {
             return new DisplayPicture
             {
+                Id = displayPictureDto.Id,
                 UserId = displayPictureDto.UserId,
-                User = displayPictureDto.User,
-                Filename = displayPictureDto.Filename,
-                UploadDate = displayPictureDto.UploadDate
+                UploadDate = displayPictureDto.UploadDate,
             };
         }
     }
