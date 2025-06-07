@@ -3,7 +3,7 @@ namespace api.Models
     public class Notification
     {
         public int Id { get; set; }
-
+        public User Sender { get; set;}
         public string SenderId { get; set; }
         public string RecipientId { get; set; }
 

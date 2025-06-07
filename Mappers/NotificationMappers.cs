@@ -10,6 +10,7 @@ namespace api.Mappers
             return new NotificationDto
             {
                 Id = notificationModel.Id,
+                Sender = notificationModel.Sender?.ToUserSummaryDto(),
                 SenderId = notificationModel.SenderId,
                 RecipientId = notificationModel.RecipientId,
                 Type = (NotificationTypeDto)notificationModel.Type,

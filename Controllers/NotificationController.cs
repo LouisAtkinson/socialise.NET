@@ -25,6 +25,7 @@ namespace api.Controllers
         {
             var notifications = await _context.Notifications
                 .Where(n => n.RecipientId == userId)
+                .Include(n => n.Sender) 
                 .ToListAsync();
 
             var notificationDtos = notifications.Select(n => n.ToNotificationDto()).ToList();
@@ -33,7 +34,7 @@ namespace api.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteNotification(string id)
+        public async Task<IActionResult> DeleteNotification(int id)
         {
             var notification = await _context.Notifications.FindAsync(id);
 
@@ -66,8 +67,8 @@ namespace api.Controllers
             return NoContent();
         }
 
-        [HttpPost("mark-as-read/{id}")]
-        public async Task<IActionResult> MarkAsRead(string id)
+        [HttpPut("mark-as-read/{id}")]
+        public async Task<IActionResult> MarkAsRead(int id)
         {
             var notification = await _context.Notifications.FindAsync(id);
 
@@ -82,7 +83,7 @@ namespace api.Controllers
             return NoContent();
         }
 
-        [HttpPost("mark-all-as-read/{userId}")]
+        [HttpPut("mark-all-as-read/{userId}")]
         public async Task<IActionResult> MarkAllAsRead(string userId)
         {
             var notifications = await _context.Notifications

@@ -4,9 +4,11 @@ namespace api.Dtos
 {
     public class NotificationDto
     {
-        public int Id { get; set; }  
+        public int Id { get; set; }
 
         public string SenderId { get; set; }
+        public UserSummaryDto? Sender { get; set; }  
+
         public string RecipientId { get; set; }
 
         public NotificationTypeDto Type { get; set; }
