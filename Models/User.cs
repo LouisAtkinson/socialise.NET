@@ -8,5 +8,6 @@ namespace api.Models
 
         public required string LastName { get; set; } = string.Empty;
         public virtual DisplayPicture? DisplayPicture { get; set; }
+        public virtual UserProfile? UserProfile { get; set; }
     }
 }

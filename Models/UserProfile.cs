@@ -4,6 +4,7 @@ namespace api.Models
 {
     public class UserProfile
     {
+        public string UserId { get; set; } = string.Empty;
         public VisibilitySettings Visibility { get; set; } = new VisibilitySettings();
 
         public string BirthDay { get; set; } = string.Empty;

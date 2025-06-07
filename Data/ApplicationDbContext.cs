@@ -18,6 +18,8 @@ namespace api.Data
         public DbSet<Post> Posts { get; set; }
         public DbSet<Friendship> Friendships { get; set; }
 
+        public DbSet<UserProfile> UserProfiles { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -63,6 +65,22 @@ namespace api.Data
                 .WithMany()
                 .HasForeignKey(f => f.UserBId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<User>()
+                .HasOne<UserProfile>()
+                .WithOne()
+                .HasForeignKey<UserProfile>(up => up.UserId);
+
+            builder.Entity<UserProfile>()
+                .HasKey(up => up.UserId); 
+
+            builder.Entity<UserProfile>()
+                .OwnsOne(up => up.Visibility, vs =>
+                {
+                    vs.Property(v => v.Birthday).HasColumnName("Visibility_Birthday");
+                    vs.Property(v => v.Hometown).HasColumnName("Visibility_Hometown");
+                    vs.Property(v => v.Occupation).HasColumnName("Visibility_Occupation");
+                });
         }
     }
 }

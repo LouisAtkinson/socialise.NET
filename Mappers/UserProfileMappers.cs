@@ -5,22 +5,29 @@ namespace api.Mappers
 {
     public static class UserProfileMappers
     {
-        public static UserProfileDto ToUserProfileDto(this UserProfile userProfileModel)
-        {
-            return new UserProfileDto
+            public static UserFullProfileDto ToUserFullProfileDto(this User user, UserProfile? userProfile)
             {
-                BirthDay = userProfileModel.BirthDay,
-                BirthMonth = userProfileModel.BirthMonth,
-                Hometown = userProfileModel.Hometown,
-                Occupation = userProfileModel.Occupation,
-                Visibility = new VisibilitySettingsDto
+                userProfile ??= new UserProfile();
+
+                return new UserFullProfileDto
                 {
-                    Birthday = userProfileModel.Visibility.Birthday,
-                    Hometown = userProfileModel.Visibility.Hometown,
-                    Occupation = userProfileModel.Visibility.Occupation,
-                }
-            };
-        }
+                    Id = user.Id,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    DisplayPicture = user.DisplayPicture?.Id,
+
+                    BirthDay = userProfile.BirthDay,
+                    BirthMonth = userProfile.BirthMonth,
+                    Hometown = userProfile.Hometown,
+                    Occupation = userProfile.Occupation,
+                    Visibility = new VisibilitySettingsDto
+                    {
+                        Birthday = userProfile.Visibility.Birthday,
+                        Hometown = userProfile.Visibility.Hometown,
+                        Occupation = userProfile.Visibility.Occupation
+                    }
+                };
+            }
 
         public static UserProfile ToUserProfileFromDto(this UserProfileDto userProfileDto)
         {
