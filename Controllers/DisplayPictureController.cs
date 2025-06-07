@@ -7,6 +7,9 @@ using api.Dtos;
 using api.Models;
 using api.Mappers;
 using api.Extensions;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Processing;
 
 namespace api.Controllers
 {
@@ -23,37 +26,91 @@ namespace api.Controllers
             _context = context;
         }
 
-        [HttpPost("upload")]
+       [HttpPost("upload")]
         [Authorize]
-        public async Task<IActionResult> UploadDisplayPicture([FromBody] DisplayPictureDto displayPictureDto)
+        public async Task<IActionResult> UploadDisplayPicture(IFormFile file)
         {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { error = "No file uploaded." });
+
             var currentUserId = User.GetUserId();
             var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
+            if (currentUser == null) return Unauthorized(new { error = "User not found." });
 
-            if (currentUser == null) return Unauthorized("User not found.");
+            try
+            {
+                using var inputStream = file.OpenReadStream();
+                using var image = Image.Load(inputStream);
 
-            var newDisplayPicture = displayPictureDto.ToDisplayPictureModel();
-            newDisplayPicture.UserId = currentUser.Id;
+                image.Mutate(x => x.Resize(new ResizeOptions
+                {
+                    Mode = ResizeMode.Max,
+                    Size = new Size(500, 500)
+                }));
 
-            _context.DisplayPictures.Add(newDisplayPicture);
-            await _context.SaveChangesAsync();
+                using var outputStream = new MemoryStream();
+                image.Save(outputStream, new JpegEncoder { Quality = 70 });
+                var compressedImage = outputStream.ToArray();
 
-            return Ok(newDisplayPicture.ToDisplayPictureDto());
+                if (compressedImage.Length > 100 * 1024)
+                    return BadRequest(new { error = "Image could not be compressed below 100KB." });
+
+                // Generate thumbnail
+                using var thumbnailImage = image.Clone(ctx => ctx.Resize(new ResizeOptions
+                {
+                    Mode = ResizeMode.Crop,
+                    Size = new Size(150, 150)
+                }));
+
+                using var thumbnailStream = new MemoryStream();
+                thumbnailImage.Save(thumbnailStream, new JpegEncoder { Quality = 50 });
+                var thumbnailData = thumbnailStream.ToArray();
+
+                var newDisplayPicture = new DisplayPicture
+                {
+                    UserId = currentUserId,
+                    UploadDate = DateTime.UtcNow,
+                    ImageData = compressedImage,
+                    ThumbnailData = thumbnailData
+                };
+
+                _context.DisplayPictures.Add(newDisplayPicture);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { Message = "Upload successful.", DisplayPictureId = newDisplayPicture.Id });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = $"Internal server error: {ex.Message}" });
+            }
         }
 
-        [HttpGet("user/{userId}")]
+        [HttpGet("user/{userId}/thumbnail")]
         [Authorize]
-        public async Task<IActionResult> GetDisplayPictureByUserId(string userId)
+        public async Task<IActionResult> GetThumbnailByUserId(string userId)
         {
             var displayPicture = await _context.DisplayPictures
-                .Include(dp => dp.User)
-                .Include(dp => dp.Comments)
-                .Include(dp => dp.Likes)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(dp => dp.UserId == userId);
 
-            if (displayPicture == null) return NotFound("Display picture not found.");
+            if (displayPicture == null)
+                return NotFound();
 
-            return Ok(displayPicture.ToDisplayPictureDto());
+            return File(displayPicture.ThumbnailData, "image/jpeg");
+        }
+
+        [HttpGet("user/{userId}/full")]
+        [Authorize]
+        public async Task<IActionResult> GetFullImageByUserId(string userId)
+        {
+            var displayPicture = await _context.DisplayPictures
+                .AsNoTracking()
+                .FirstOrDefaultAsync(dp => dp.UserId == userId);
+
+            if (displayPicture == null)
+                return NotFound();
+
+            return File(displayPicture.ImageData, "image/jpeg");
         }
 
         [HttpGet("{id}/details")]
@@ -67,9 +124,11 @@ namespace api.Controllers
                 .Include(dp => dp.Likes)
                 .FirstOrDefaultAsync(dp => dp.Id == id);
 
-            if (displayPicture == null) return NotFound("Display picture not found.");
+            if (displayPicture == null)
+                return NotFound();
 
-            return Ok(displayPicture.ToDisplayPictureDto());
+            var dto = displayPicture.ToDisplayPictureDto();
+            return Ok(dto);
         }
 
         [HttpPost("{id}/like")]
@@ -79,11 +138,11 @@ namespace api.Controllers
             var currentUserId = User.GetUserId();
             var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
-            if (currentUser == null) return Unauthorized("User not found.");
+            if (currentUser == null) return Unauthorized(new { error = "User not found." });
 
             var displayPicture = await _context.DisplayPictures.Include(dp => dp.Likes).FirstOrDefaultAsync(dp => dp.Id == id);
 
-            if (displayPicture == null) return NotFound("Display picture not found.");
+            if (displayPicture == null) return NotFound(new { error = "Display picture not found." });
 
             if (!displayPicture.Likes.Contains(currentUser))
             {
@@ -91,7 +150,7 @@ namespace api.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            return Ok("Display picture liked.");
+            return Ok(new { message = "Display picture liked." });
         }
 
         [HttpPost("{id}/unlike")]
@@ -101,11 +160,11 @@ namespace api.Controllers
             var currentUserId = User.GetUserId();
             var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
-            if (currentUser == null) return Unauthorized("User not found.");
+            if (currentUser == null) return Unauthorized(new { error = "User not found." });
 
             var displayPicture = await _context.DisplayPictures.Include(dp => dp.Likes).FirstOrDefaultAsync(dp => dp.Id == id);
 
-            if (displayPicture == null) return NotFound("Display picture not found.");
+            if (displayPicture == null) return NotFound(new { error = "Display picture not found." });
 
             if (displayPicture.Likes.Contains(currentUser))
             {
@@ -113,7 +172,7 @@ namespace api.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            return Ok("Display picture unliked.");
+            return Ok(new { message = "Display picture unliked." });
         }
 
         [HttpPost("{id}/comment")]
@@ -123,11 +182,11 @@ namespace api.Controllers
             var currentUserId = User.GetUserId();
             var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
-            if (currentUser == null) return Unauthorized("User not found.");
+            if (currentUser == null) return Unauthorized(new { error = "User not found." });
 
             var displayPicture = await _context.DisplayPictures.Include(dp => dp.Comments).FirstOrDefaultAsync(dp => dp.Id == id);
 
-            if (displayPicture == null) return NotFound("Display picture not found.");
+            if (displayPicture == null) return NotFound(new { error = "Display picture not found." });
 
             var comment = new Comment
             {
@@ -139,7 +198,7 @@ namespace api.Controllers
             displayPicture.Comments.Add(comment);
             await _context.SaveChangesAsync();
 
-            return Ok("Comment added.");
+            return Ok(new { message = "Comment added." });
         }
 
         [HttpDelete("{id}/comment/{commentId}")]
@@ -149,20 +208,20 @@ namespace api.Controllers
             var currentUserId = User.GetUserId();
             var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
-            if (currentUser == null) return Unauthorized("User not found.");
+            if (currentUser == null) return Unauthorized(new { error = "User not found." });
 
             var displayPicture = await _context.DisplayPictures.Include(dp => dp.Comments).FirstOrDefaultAsync(dp => dp.Id == id);
 
-            if (displayPicture == null) return NotFound("Display picture not found.");
+            if (displayPicture == null) return NotFound(new { error = "Display picture not found." });
 
             var comment = displayPicture.Comments.FirstOrDefault(c => c.Id == commentId && c.AuthorId == currentUser.Id);
 
-            if (comment == null) return NotFound("Comment not found or insufficient permissions.");
+            if (comment == null) return NotFound(new { error = "Comment not found or insufficient permissions." });
 
             displayPicture.Comments.Remove(comment);
             await _context.SaveChangesAsync();
 
-            return Ok("Comment removed.");
+            return Ok(new { message = "Comment removed." });
         }
     }
 }
