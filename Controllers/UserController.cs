@@ -35,11 +35,11 @@ namespace api.Controllers
 
             var user = await _userManager.Users.FirstOrDefaultAsync(x => x.Email == loginDto.Email.ToLower());
 
-            if (user == null) return Unauthorized("Invalid email!");
+            if (user == null) return Unauthorized(new { error = "Invalid email or account does not exist." });
 
             var result = await _signinManager.CheckPasswordSignInAsync(user, loginDto.Password, false);
 
-            if (!result.Succeeded) return Unauthorized("Email not found and/or password incorrect");
+            if (!result.Succeeded) return Unauthorized(new { error = "Email not found and/or password incorrect" });
 
             return Ok(
                 new NewUserDto
@@ -79,7 +79,7 @@ namespace api.Controllers
                         return Ok(
                             new NewUserDto
                             {
-                                Id= user.Id,
+                                Id = user.Id,
                                 FirstName = user.FirstName,
                                 LastName = user.LastName,
                                 Email = user.Email,
@@ -89,17 +89,26 @@ namespace api.Controllers
                     }
                     else
                     {
-                        return StatusCode(500, roleResult.Errors);
+                        return StatusCode(500, new
+                        {
+                            error = string.Join(" ", createdUser.Errors.Select(e => e.Description))
+                        });
                     }
                 }
                 else
                 {
-                    return StatusCode(500, createdUser.Errors);
+                    return StatusCode(500, new
+                    {
+                        error = string.Join(" ", createdUser.Errors.Select(e => e.Description))
+                    });
                 }
             }
             catch (Exception e)
             {
-                return StatusCode(500, e);
+                return StatusCode(500, new
+                {
+                    error = new List<string> { "An unexpected error occurred.", e.Message }
+                });
             }
         }
 

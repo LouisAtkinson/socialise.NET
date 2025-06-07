@@ -33,7 +33,7 @@ namespace api.Controllers
             var currentUserId = User.GetUserId();
             var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
-            if (currentUser == null) return Unauthorized("User not found.");
+            if (currentUser == null) return Unauthorized(new { error = "User not found." });
 
             var userFriends = await _context.Friendships
                 .Where(f => (f.UserAId == currentUser.Id || f.UserBId == currentUser.Id) && f.Status == FriendshipStatus.Accepted)
@@ -49,6 +49,7 @@ namespace api.Controllers
                     p.AuthorId == currentUser.Id ||
                     (userFriends.Contains(p.AuthorId) && p.RecipientId == null) ||
                     (userFriends.Contains(p.AuthorId) || userFriends.Contains(p.RecipientId)))
+                .OrderByDescending(p => p.Date)
                 .ToListAsync();
 
             return Ok(posts.Select(p => p.ToPostDto()));
@@ -61,14 +62,14 @@ namespace api.Controllers
             var currentUserId = User.GetUserId();
             var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
-            if (currentUser == null) return Unauthorized("User not found.");
+            if (currentUser == null) return Unauthorized(new { error = "User not found." });
 
             var isFriend = await _context.Friendships.AnyAsync(f =>
                 f.Status == FriendshipStatus.Accepted &&
                 ((f.UserAId == currentUser.Id && f.UserBId == userId) ||
                  (f.UserBId == currentUser.Id && f.UserAId == userId)));
 
-            if (!isFriend && userId != currentUser.Id) return Forbid("Access denied.");
+            if (!isFriend && userId != currentUser.Id) return StatusCode(403, new { error = "Access denied." });
 
             var posts = await _context.Posts
                 .Include(p => p.Author)
@@ -76,6 +77,7 @@ namespace api.Controllers
                 .Include(p => p.Likes)
                 .Include(p => p.Comments)
                 .Where(p => p.AuthorId == userId || p.RecipientId == userId)
+                .OrderByDescending(p => p.Date)
                 .ToListAsync();
 
             return Ok(posts.Select(p => p.ToPostDto()));
@@ -88,7 +90,7 @@ namespace api.Controllers
             var currentUserId = User.GetUserId();
             var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
-            if (currentUser == null) return Unauthorized("User not found.");
+            if (currentUser == null) return Unauthorized(new { error = "User not found." });
 
             var post = await _context.Posts
                 .Include(p => p.Author)
@@ -103,7 +105,7 @@ namespace api.Controllers
                         ((f.UserAId == currentUser.Id && f.UserBId == p.AuthorId) ||
                          (f.UserBId == currentUser.Id && f.UserAId == p.AuthorId)))));
 
-            if (post == null) return NotFound("Post not found.");
+            if (post == null) return NotFound(new { error = "Post not found." });
 
             return Ok(post.ToPostDto());
         }
@@ -115,7 +117,7 @@ namespace api.Controllers
             var currentUserId = User.GetUserId();
             var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
-            if (currentUser == null) return Unauthorized("User not found.");
+            if (currentUser == null) return Unauthorized(new { error = "User not found." });
 
             var newPost = postDto.ToPostFromCreateDto();
             newPost.AuthorId = currentUser.Id;
@@ -134,14 +136,14 @@ namespace api.Controllers
             var currentUserId = User.GetUserId();
             var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
-            if (currentUser == null) return Unauthorized("User not found.");
+            if (currentUser == null) return Unauthorized(new { error = "User not found." });
 
             var isFriend = await _context.Friendships.AnyAsync(f =>
                 f.Status == FriendshipStatus.Accepted &&
                 ((f.UserAId == currentUser.Id && f.UserBId == friendId) ||
                  (f.UserBId == currentUser.Id && f.UserAId == friendId)));
 
-            if (!isFriend) return Forbid("Recipient must be a friend.");
+            if (!isFriend) return StatusCode(403, new { error = "Recipient must be a friend." });
 
             var newPost = postDto.ToPostFromCreateDto();
             newPost.AuthorId = currentUser.Id;
@@ -155,7 +157,7 @@ namespace api.Controllers
             {
                 SenderId = currentUser.Id,
                 RecipientId = friendId,
-                Type = NotificationType.PostFromFriend,
+                Type = NotificationType.postFromFriend,
                 Timestamp = DateTime.UtcNow,
                 PostId = newPost.Id
             };
@@ -172,18 +174,18 @@ namespace api.Controllers
             var currentUserId = User.GetUserId();
             var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
 
-            if (currentUser == null) return Unauthorized("User not found.");
+            if (currentUser == null) return Unauthorized(new { error = "User not found." });
 
             var post = await _context.Posts.FirstOrDefaultAsync(p =>
                 p.Id == postId &&
                 (p.AuthorId == currentUser.Id || p.RecipientId == currentUser.Id));
 
-            if (post == null) return NotFound("Post not found or insufficient permissions.");
+            if (post == null) return NotFound(new { error = "Post not found or insufficient permissions." });
 
             _context.Posts.Remove(post);
             await _context.SaveChangesAsync();
 
-            return Ok("Post deleted successfully.");
+            return Ok(new { message = "Post deleted successfully." });
         }
 
         [HttpPost("{id}/like")]
@@ -193,10 +195,10 @@ namespace api.Controllers
             var currentUserId = User.GetUserId();
             var currentUser = await _userManager.FindByIdAsync(currentUserId);
 
-            if (currentUser == null) return Unauthorized("User not found.");
+            if (currentUser == null) return Unauthorized(new { error = "User not found." });
 
             var post = await _context.Posts.Include(p => p.Likes).FirstOrDefaultAsync(p => p.Id == id);
-            if (post == null) return NotFound("Post not found.");
+            if (post == null) return NotFound(new { error = "Post not found." });
 
             if (!post.Likes.Contains(currentUser))
             {
@@ -209,7 +211,7 @@ namespace api.Controllers
                     {
                         SenderId = currentUser.Id,
                         RecipientId = post.AuthorId,
-                        Type = NotificationType.PostLike,
+                        Type = NotificationType.postLike,
                         Timestamp = DateTime.UtcNow,
                         PostId = post.Id
                     };
@@ -218,20 +220,20 @@ namespace api.Controllers
                 }
             }
 
-            return Ok("Post liked.");
+            return Ok(new { message = "Post liked." });
         }
 
-        [HttpPost("{id}/unlike")]
+        [HttpDelete("{id}/unlike")]
         [Authorize]
         public async Task<IActionResult> UnlikePost(int id)
         {
             var currentUserId = User.GetUserId();
             var currentUser = await _userManager.FindByIdAsync(currentUserId);
 
-            if (currentUser == null) return Unauthorized("User not found.");
+            if (currentUser == null) return Unauthorized(new { error = "User not found." });
 
             var post = await _context.Posts.Include(p => p.Likes).FirstOrDefaultAsync(p => p.Id == id);
-            if (post == null) return NotFound("Post not found.");
+            if (post == null) return NotFound(new { error = "Post not found." });
 
             if (post.Likes.Contains(currentUser))
             {
@@ -239,7 +241,7 @@ namespace api.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            return Ok("Post unliked.");
+            return Ok(new { message = "Post unliked." });
         }
     }
 }
