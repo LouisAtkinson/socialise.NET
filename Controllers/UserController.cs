@@ -113,16 +113,20 @@ namespace api.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById([FromRoute] string id) {
+        public async Task<IActionResult> GetById([FromRoute] string id)
+        {
             var user = await _context.Users
+                .Include(u => u.DisplayPicture)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
-            if (user == null)
-            {
-                return NotFound();
-            }
+            if (user == null) return NotFound();
 
-            return Ok(user.ToUserDto());
+            var userProfile = await _context.UserProfiles
+                .FirstOrDefaultAsync(up => up.UserId == id);
+
+            var dto = user.ToUserFullProfileDto(userProfile);
+
+            return Ok(dto);
         }
     }
 }
