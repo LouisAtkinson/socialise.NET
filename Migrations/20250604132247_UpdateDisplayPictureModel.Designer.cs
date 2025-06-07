@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using api.Data;
@@ -11,9 +12,11 @@ using api.Data;
 namespace socialApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250604132247_UpdateDisplayPictureModel")]
+    partial class UpdateDisplayPictureModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,21 +24,6 @@ namespace socialApi.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("DisplayPictureUser", b =>
-                {
-                    b.Property<int>("DisplayPicture1Id")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("LikesId")
-                        .HasColumnType("text");
-
-                    b.HasKey("DisplayPicture1Id", "LikesId");
-
-                    b.HasIndex("LikesId");
-
-                    b.ToTable("DisplayPictureLikes", (string)null);
-                });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -207,7 +195,7 @@ namespace socialApi.Migrations
                     b.Property<int?>("DisplayPictureId")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("PostId")
+                    b.Property<int>("PostId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -246,8 +234,7 @@ namespace socialApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
                     b.ToTable("DisplayPictures");
                 });
@@ -358,12 +345,12 @@ namespace socialApi.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("CommentId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("text");
+
+                    b.Property<int?>("DisplayPictureId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -418,7 +405,7 @@ namespace socialApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CommentId");
+                    b.HasIndex("DisplayPictureId");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -430,21 +417,6 @@ namespace socialApi.Migrations
                     b.HasIndex("PostId");
 
                     b.ToTable("AspNetUsers", (string)null);
-                });
-
-            modelBuilder.Entity("DisplayPictureUser", b =>
-                {
-                    b.HasOne("api.Models.DisplayPicture", null)
-                        .WithMany()
-                        .HasForeignKey("DisplayPicture1Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("api.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("LikesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -512,7 +484,9 @@ namespace socialApi.Migrations
 
                     b.HasOne("api.Models.Post", "Post")
                         .WithMany("Comments")
-                        .HasForeignKey("PostId");
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Author");
 
@@ -522,8 +496,8 @@ namespace socialApi.Migrations
             modelBuilder.Entity("api.Models.DisplayPicture", b =>
                 {
                     b.HasOne("api.Models.User", "User")
-                        .WithOne("DisplayPicture")
-                        .HasForeignKey("api.Models.DisplayPicture", "UserId")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -568,23 +542,20 @@ namespace socialApi.Migrations
 
             modelBuilder.Entity("api.Models.User", b =>
                 {
-                    b.HasOne("api.Models.Comment", null)
+                    b.HasOne("api.Models.DisplayPicture", null)
                         .WithMany("Likes")
-                        .HasForeignKey("CommentId");
+                        .HasForeignKey("DisplayPictureId");
 
                     b.HasOne("api.Models.Post", null)
                         .WithMany("Likes")
                         .HasForeignKey("PostId");
                 });
 
-            modelBuilder.Entity("api.Models.Comment", b =>
-                {
-                    b.Navigation("Likes");
-                });
-
             modelBuilder.Entity("api.Models.DisplayPicture", b =>
                 {
                     b.Navigation("Comments");
+
+                    b.Navigation("Likes");
                 });
 
             modelBuilder.Entity("api.Models.Post", b =>
@@ -592,11 +563,6 @@ namespace socialApi.Migrations
                     b.Navigation("Comments");
 
                     b.Navigation("Likes");
-                });
-
-            modelBuilder.Entity("api.Models.User", b =>
-                {
-                    b.Navigation("DisplayPicture");
                 });
 #pragma warning restore 612, 618
         }

@@ -20,14 +20,14 @@ namespace api.Models
 
     public enum NotificationType
     {
-        FriendRequest,
-        FriendRequestAccepted,
-        PostComment,
-        PostLike,
-        CommentLike,
-        DisplayPictureComment,
-        DisplayPictureLike,
-        DisplayPictureCommentLike,
-        PostFromFriend
+        friendRequest,
+        friendRequestAccepted,
+        postComment,
+        postLike,
+        commentLike,
+        displayPictureComment,
+        displayPictureLike,
+        displayPictureCommentLike,
+        postFromFriend
     }
 }
