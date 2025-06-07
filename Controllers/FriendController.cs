@@ -19,13 +19,15 @@ namespace api.Controllers
         private readonly UserManager<User> _userManager;
         private readonly ITokenService _tokenService;
         private readonly SignInManager<User> _signinManager;
+        private readonly INotificationRepository _notificationService;
 
-        public FriendController(UserManager<User> userManager, ITokenService tokenService, SignInManager<User> signInManager, ApplicationDbContext context)
+        public FriendController(UserManager<User> userManager, ITokenService tokenService, SignInManager<User> signInManager, ApplicationDbContext context, INotificationRepository notificationService)
         {
             _userManager = userManager;
             _tokenService = tokenService;
             _signinManager = signInManager;
             _context = context;
+            _notificationService = notificationService;
         }
 
         [HttpPost("request")]
@@ -38,7 +40,7 @@ namespace api.Controllers
             var sender = await _userManager.FindByIdAsync(senderUserId);
             var recipient = await _userManager.FindByIdAsync(recipientUserId);
 
-            if (recipient == null) return NotFound("Recipient not found!");
+            if (recipient == null) return NotFound(new { message = "Recipient not found!" });
 
             var existingFriendship = await _context.Friendships.FirstOrDefaultAsync(f =>
                 (f.UserAId == sender.Id && f.UserBId == recipient.Id) ||
@@ -46,7 +48,7 @@ namespace api.Controllers
             );
 
             if (existingFriendship != null)
-                return BadRequest("Friend request already exists or users are already friends!");
+                return BadRequest(new { message = "Friend request already exists or users are already friends!" });
 
             var newFriendship = new Friendship
             {
@@ -58,7 +60,17 @@ namespace api.Controllers
             _context.Friendships.Add(newFriendship);
             await _context.SaveChangesAsync();
 
-            return Ok("Friend request sent successfully!");
+            var notification = new Notification
+            {
+                SenderId = sender.Id,
+                RecipientId = recipient.Id,
+                Type = NotificationType.friendRequest,
+                Timestamp = DateTime.UtcNow
+            };
+
+            await _notificationService.AddAsync(notification);
+
+            return Ok(new { message = "Friend request sent successfully!" });
         }
 
         [HttpPost("accept")]
@@ -71,13 +83,34 @@ namespace api.Controllers
             var friendship = await _context.Friendships.FirstOrDefaultAsync(f =>
                 f.Id == friendshipId && f.UserBId == currentUserId && f.Status == FriendshipStatus.Pending);
 
-            if (friendship == null) return NotFound("Friend request not found!");
+            if (friendship == null) return NotFound(new { error = "Friend request not found." });
 
             friendship.Status = FriendshipStatus.Accepted;
+
+            var originalNotification = await _context.Notifications.FirstOrDefaultAsync(n =>
+                n.RecipientId == currentUserId &&
+                n.SenderId == friendship.UserAId &&
+                n.Type == NotificationType.friendRequest);
+
+            if (originalNotification != null)
+            {
+                _context.Notifications.Remove(originalNotification);
+            }
+
+            var notification = new Notification
+            {
+                SenderId = currentUserId,
+                RecipientId = friendship.UserAId,
+                Type = NotificationType.friendRequestAccepted,
+                Timestamp = DateTime.UtcNow
+            };
+
+            _context.Notifications.Add(notification);
             await _context.SaveChangesAsync();
 
-            return Ok("Friend request accepted!");
+            return Ok(new { message = "Friend request accepted!" });
         }
+
 
         [HttpGet]
         [Authorize]
@@ -109,17 +142,28 @@ namespace api.Controllers
                     (f.UserBId == currentUserId || f.UserAId == currentUserId));
 
             if (friendship == null)
-                return NotFound("Friendship not found.");
+                return NotFound(new { error = "Friendship not found." });
 
             if (friendship.Status == FriendshipStatus.Pending && friendship.UserBId == currentUserId)
             {
+                var originalNotification = await _context.Notifications.FirstOrDefaultAsync(n =>
+                    n.RecipientId == currentUserId &&
+                    n.SenderId == friendship.UserAId &&
+                    n.Type == NotificationType.friendRequest);
+
+                if (originalNotification != null)
+                {
+                    _context.Notifications.Remove(originalNotification);
+                }
+
                 _context.Friendships.Remove(friendship);
                 await _context.SaveChangesAsync();
-                return Ok("Friendship request rejected.");
+                return Ok(new { message = "Friendship request rejected." });
             }
 
-            return BadRequest("Invalid operation.");
+            return BadRequest(new { error = "Invalid operation." });
         }
+
 
         [HttpDelete("delete")]
         [Authorize]
@@ -133,11 +177,11 @@ namespace api.Controllers
                     (f.UserAId == currentUserId || f.UserBId == currentUserId));
 
             if (friendship == null)
-                return NotFound("Friendship not found.");
+                return NotFound(new { error = "Friendship not found." });
 
             _context.Friendships.Remove(friendship);
             await _context.SaveChangesAsync();
-            return Ok("Friendship deleted.");
+            return Ok(new { message = "Friendship deleted." });
         }
     }
 }
