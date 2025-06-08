@@ -84,7 +84,7 @@ namespace api.Controllers
             return Ok(comment.ToCommentDto());
         }
 
-        [HttpPost("displaypicture/{displayPictureId}")]
+        [HttpPost("display-picture/{displayPictureId}")]
         [Authorize]
         public async Task<IActionResult> AddCommentToDisplayPicture(int displayPictureId, [FromBody] CreateCommentDto commentDto)
         {
@@ -109,7 +109,7 @@ namespace api.Controllers
             var comment = new Comment
             {
                 AuthorId = currentUser.Id,
-                DisplayPictureId = displayPictureId,  // You will need this property in your Comment model
+                DisplayPictureId = displayPictureId, 
                 Content = commentDto.Content,
                 Date = DateTime.UtcNow
             };
