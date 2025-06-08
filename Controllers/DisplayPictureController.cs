@@ -113,16 +113,16 @@ namespace api.Controllers
             return File(displayPicture.ImageData, "image/jpeg");
         }
 
-        [HttpGet("{id}/details")]
+        [HttpGet("user/{userId}/details")]
         [Authorize]
-        public async Task<IActionResult> GetDisplayPictureDetails(int id)
+        public async Task<IActionResult> GetDisplayPictureDetailsByUserId(string userId)
         {
             var displayPicture = await _context.DisplayPictures
                 .Include(dp => dp.User)
                 .Include(dp => dp.Comments)
                     .ThenInclude(c => c.Author)
                 .Include(dp => dp.Likes)
-                .FirstOrDefaultAsync(dp => dp.Id == id);
+                .FirstOrDefaultAsync(dp => dp.User.Id == userId);
 
             if (displayPicture == null)
                 return NotFound();
@@ -173,55 +173,6 @@ namespace api.Controllers
             }
 
             return Ok(new { message = "Display picture unliked." });
-        }
-
-        [HttpPost("{id}/comment")]
-        [Authorize]
-        public async Task<IActionResult> CommentOnDisplayPicture(int id, [FromBody] string commentText)
-        {
-            var currentUserId = User.GetUserId();
-            var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
-
-            if (currentUser == null) return Unauthorized(new { error = "User not found." });
-
-            var displayPicture = await _context.DisplayPictures.Include(dp => dp.Comments).FirstOrDefaultAsync(dp => dp.Id == id);
-
-            if (displayPicture == null) return NotFound(new { error = "Display picture not found." });
-
-            var comment = new Comment
-            {
-                AuthorId = currentUser.Id,
-                Content = commentText,
-                Date = DateTime.UtcNow
-            };
-
-            displayPicture.Comments.Add(comment);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Comment added." });
-        }
-
-        [HttpDelete("{id}/comment/{commentId}")]
-        [Authorize]
-        public async Task<IActionResult> RemoveComment(int id, int commentId)
-        {
-            var currentUserId = User.GetUserId();
-            var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
-
-            if (currentUser == null) return Unauthorized(new { error = "User not found." });
-
-            var displayPicture = await _context.DisplayPictures.Include(dp => dp.Comments).FirstOrDefaultAsync(dp => dp.Id == id);
-
-            if (displayPicture == null) return NotFound(new { error = "Display picture not found." });
-
-            var comment = displayPicture.Comments.FirstOrDefault(c => c.Id == commentId && c.AuthorId == currentUser.Id);
-
-            if (comment == null) return NotFound(new { error = "Comment not found or insufficient permissions." });
-
-            displayPicture.Comments.Remove(comment);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Comment removed." });
         }
     }
 }
