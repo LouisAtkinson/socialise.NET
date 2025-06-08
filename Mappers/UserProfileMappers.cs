@@ -7,8 +7,6 @@ namespace api.Mappers
     {
             public static UserFullProfileDto ToUserFullProfileDto(this User user, UserProfile? userProfile)
             {
-                userProfile ??= new UserProfile();
-
                 return new UserFullProfileDto
                 {
                     Id = user.Id,
@@ -29,10 +27,11 @@ namespace api.Mappers
                 };
             }
 
-        public static UserProfile ToUserProfileFromDto(this UserProfileDto userProfileDto)
+        public static UserProfile ToUserProfileFromDto(this UserProfileDto userProfileDto, string userId)
         {
             return new UserProfile
             {
+                UserId = userId,
                 BirthDay = userProfileDto.BirthDay,
                 BirthMonth = userProfileDto.BirthMonth,
                 Hometown = userProfileDto.Hometown,
@@ -43,6 +42,19 @@ namespace api.Mappers
                     Hometown = userProfileDto.Visibility.Hometown,
                     Occupation = userProfileDto.Visibility.Occupation,
                 }
+            };
+        }
+
+        public static UserProfile CreateDefault(string userId)
+        {
+            return new UserProfile
+            {
+                UserId = userId,
+                BirthDay = string.Empty,
+                BirthMonth = string.Empty,
+                Hometown = string.Empty,
+                Occupation = string.Empty,
+                Visibility = new VisibilitySettings()
             };
         }
     }

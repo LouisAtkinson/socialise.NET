@@ -16,6 +16,18 @@ namespace api.Mappers
             };
         }
 
+            public static NewUserDto ToNewUserDto(this User user, string token)
+        {
+            return new NewUserDto
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                Token = token
+            };
+        }
+
         public static User ToUserFromDto(this UserDto userDto)
         {
             return new User
@@ -24,6 +36,17 @@ namespace api.Mappers
                 LastName = userDto.LastName,
                 Email = userDto.Email,
                 UserName = userDto.Email
+            };
+        }
+
+        public static User ToUserFromDto(this RegisterDto registerDto)
+        {
+            return new User
+            {
+                FirstName = registerDto.FirstName,
+                LastName = registerDto.LastName,
+                Email = registerDto.Email.ToLower(),
+                UserName = registerDto.Email.ToLower()
             };
         }
 

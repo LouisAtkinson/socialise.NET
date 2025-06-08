@@ -7,6 +7,7 @@ using api.Dtos;
 using api.Models;
 using api.Mappers;
 using api.Interfaces;
+using api.Extensions;
 
 namespace api.Controllers
 {
@@ -35,22 +36,18 @@ namespace api.Controllers
 
             var user = await _userManager.Users.FirstOrDefaultAsync(x => x.Email == loginDto.Email.ToLower());
 
-            if (user == null) return Unauthorized(new { error = "Invalid email or account does not exist." });
+            if (user == null) 
+                return Unauthorized(new { error = "Invalid email or account does not exist." });
 
             var result = await _signinManager.CheckPasswordSignInAsync(user, loginDto.Password, false);
 
-            if (!result.Succeeded) return Unauthorized(new { error = "Email not found and/or password incorrect" });
+            if (!result.Succeeded) 
+                return Unauthorized(new { error = "Email not found and/or password incorrect" });
 
-            return Ok(
-                new NewUserDto
-                {
-                    Id = user.Id,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    Email = user.Email,
-                    Token = _tokenService.CreateToken(user)
-                }
-            );
+            var token = _tokenService.CreateToken(user);
+            var newUserDto = user.ToNewUserDto(token);
+
+            return Ok(newUserDto);
         }
 
         [HttpPost("register")]
@@ -61,47 +58,36 @@ namespace api.Controllers
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var user = new User
-                {
-                    FirstName = registerDto.FirstName,
-                    LastName = registerDto.LastName,
-                    Email = registerDto.Email.ToLower(),
-                    UserName = registerDto.Email.ToLower()
-                };
+                var user = registerDto.ToUserFromDto();
+
+                user.Email = user.Email.ToLower();
+                user.UserName = user.Email;
 
                 var createdUser = await _userManager.CreateAsync(user, registerDto.Password);
 
-                if (createdUser.Succeeded)
-                {
-                    var roleResult = await _userManager.AddToRoleAsync(user, "User");
-                    if (roleResult.Succeeded)
-                    {
-                        return Ok(
-                            new NewUserDto
-                            {
-                                Id = user.Id,
-                                FirstName = user.FirstName,
-                                LastName = user.LastName,
-                                Email = user.Email,
-                                Token = _tokenService.CreateToken(user)
-                            }
-                        );
-                    }
-                    else
-                    {
-                        return StatusCode(500, new
-                        {
-                            error = string.Join(" ", createdUser.Errors.Select(e => e.Description))
-                        });
-                    }
-                }
-                else
+                if (!createdUser.Succeeded)
                 {
                     return StatusCode(500, new
                     {
                         error = string.Join(" ", createdUser.Errors.Select(e => e.Description))
                     });
                 }
+
+                var roleResult = await _userManager.AddToRoleAsync(user, "User");
+
+                if (!roleResult.Succeeded)
+                {
+                    return StatusCode(500, new
+                    {
+                        error = string.Join(" ", roleResult.Errors.Select(e => e.Description))
+                    });
+                }
+
+                var token = _tokenService.CreateToken(user);
+
+                var newUserDto = user.ToNewUserDto(token);
+
+                return Ok(newUserDto);
             }
             catch (Exception e)
             {
@@ -112,7 +98,9 @@ namespace api.Controllers
             }
         }
 
+
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<IActionResult> GetById([FromRoute] string id)
         {
             var user = await _context.Users
@@ -128,5 +116,51 @@ namespace api.Controllers
 
             return Ok(dto);
         }
+
+        [HttpPut("{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateUserProfile(string id, [FromBody] UserProfileDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var currentUserId = User.GetUserId();
+
+            if (id != currentUserId)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { error = "You are not authorised to update this profile." });
+            }
+
+            var userProfile = await _context.UserProfiles.FirstOrDefaultAsync(up => up.UserId == id);
+
+            if (userProfile == null)
+            {
+                return NotFound(new { error = "User profile not found." });
+            }
+
+            try
+            {
+                userProfile.BirthDay = dto.BirthDay;
+                userProfile.BirthMonth = dto.BirthMonth;
+                userProfile.Hometown = dto.Hometown;
+                userProfile.Occupation = dto.Occupation;
+
+                userProfile.Visibility.Birthday = dto.Visibility.Birthday;
+                userProfile.Visibility.Hometown = dto.Visibility.Hometown;
+                userProfile.Visibility.Occupation = dto.Visibility.Occupation;
+
+                _context.UserProfiles.Update(userProfile);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "User profile updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = $"Internal server error: {ex.Message}" });
+            }
+        }
+
     }
 }

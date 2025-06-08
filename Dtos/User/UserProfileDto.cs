@@ -5,7 +5,6 @@ namespace api.Dtos
     public class UserProfileDto
     {
         public VisibilitySettingsDto Visibility { get; set; } = new VisibilitySettingsDto();
-
         public string BirthDay { get; set; } = string.Empty;
         public string BirthMonth { get; set; } = string.Empty;
         public string Hometown { get; set; } = string.Empty;
