@@ -66,6 +66,16 @@ namespace api.Controllers
                 thumbnailImage.Save(thumbnailStream, new JpegEncoder { Quality = 50 });
                 var thumbnailData = thumbnailStream.ToArray();
 
+                // If it exists, delete the old display picture first
+                var oldDisplayPicture = await _context.DisplayPictures
+                    .FirstOrDefaultAsync(dp => dp.UserId == currentUserId);
+
+                if (oldDisplayPicture != null)
+                {
+                    _context.DisplayPictures.Remove(oldDisplayPicture);
+                }
+
+                // Then save the new one
                 var newDisplayPicture = new DisplayPicture
                 {
                     UserId = currentUserId,
