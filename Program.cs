@@ -13,7 +13,7 @@ using Newtonsoft.Json.Converters;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5116";
 builder.WebHost.UseUrls($"http://*:{port}");
 
 builder.Services.AddOpenApi();
