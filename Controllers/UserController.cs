@@ -36,12 +36,12 @@ namespace api.Controllers
 
             var user = await _userManager.Users.FirstOrDefaultAsync(x => x.Email == loginDto.Email.ToLower());
 
-            if (user == null) 
+            if (user == null)
                 return Unauthorized(new { error = "Invalid email or account does not exist." });
 
             var result = await _signinManager.CheckPasswordSignInAsync(user, loginDto.Password, false);
 
-            if (!result.Succeeded) 
+            if (!result.Succeeded)
                 return Unauthorized(new { error = "Email not found and/or password incorrect" });
 
             var token = _tokenService.CreateToken(user);
@@ -82,6 +82,16 @@ namespace api.Controllers
                         error = string.Join(" ", roleResult.Errors.Select(e => e.Description))
                     });
                 }
+
+                var userProfile = new UserProfile
+                {
+                    UserId = user.Id,
+                };
+
+                _context.UserProfiles.Add(userProfile);
+                await _context.SaveChangesAsync();
+
+                user.UserProfile = userProfile;
 
                 var token = _tokenService.CreateToken(user);
 
@@ -162,5 +172,24 @@ namespace api.Controllers
             }
         }
 
+        [HttpGet("search/{query}")]
+        [Authorize] 
+        public async Task<IActionResult> SearchUsers(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return BadRequest(new { error = "Query parameter is required." });
+
+            var loweredQuery = query.ToLower();
+
+            var users = await _context.Users
+                .Where(u => u.FirstName.ToLower().StartsWith(loweredQuery) ||
+                            u.LastName.ToLower().StartsWith(loweredQuery))
+                .Include(u => u.DisplayPicture)
+                .ToListAsync();
+
+            var userSummaries = users.Select(u => u.ToUserSummaryDto()).ToList();
+
+            return Ok(userSummaries);
+        }
     }
 }
