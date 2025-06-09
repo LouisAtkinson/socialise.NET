@@ -64,7 +64,7 @@ namespace api.Controllers
             return Ok(dto);
         }
 
-        [HttpPost("request")]
+        [HttpPost("request/{recipientUserId}")]
         [Authorize]
         public async Task<IActionResult> SendFriendRequest(string recipientUserId)
         {
@@ -107,7 +107,7 @@ namespace api.Controllers
             return Ok(new { message = "Friend request sent successfully!" });
         }
 
-        [HttpPost("accept")]
+        [HttpPost("accept/{friendshipId}")]
         [Authorize]
         public async Task<IActionResult> AcceptFriendRequest(int friendshipId)
         {
@@ -145,7 +145,7 @@ namespace api.Controllers
             return Ok(new { message = "Friend request accepted!" });
         }
 
-        [HttpPost("reject")]
+        [HttpPost("reject/{friendshipId}")]
         [Authorize]
         public async Task<IActionResult> RejectFriendship(int friendshipId)
         {
@@ -180,7 +180,7 @@ namespace api.Controllers
         }
 
 
-        [HttpDelete("delete")]
+        [HttpDelete("delete/{friendshipId}")]
         [Authorize]
         public async Task<IActionResult> DeleteFriendship(int friendshipId)
         {
