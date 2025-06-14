@@ -26,6 +26,7 @@ namespace api.Controllers
             var notifications = await _context.Notifications
                 .Where(n => n.RecipientId == userId)
                 .Include(n => n.Sender) 
+                .OrderByDescending(n => n.Timestamp) 
                 .ToListAsync();
 
             var notificationDtos = notifications.Select(n => n.ToNotificationDto()).ToList();
