@@ -81,6 +81,22 @@ namespace api.Data
                     vs.Property(v => v.Hometown).HasColumnName("Visibility_Hometown");
                     vs.Property(v => v.Occupation).HasColumnName("Visibility_Occupation");
                 });
-        }
+
+            builder.Entity<Post>()
+                .HasMany(p => p.Likes)
+                .WithMany()
+                .UsingEntity<Dictionary<string, object>>(
+                    "PostLikes",
+                    j => j.HasOne<User>().WithMany().HasForeignKey("UserId"),
+                    j => j.HasOne<Post>().WithMany().HasForeignKey("PostId"));
+
+            builder.Entity<Comment>()
+                .HasMany(c => c.Likes)
+                .WithMany()
+                .UsingEntity<Dictionary<string, object>>(
+                    "CommentLikes",
+                    j => j.HasOne<User>().WithMany().HasForeignKey("UserId"),
+                    j => j.HasOne<Comment>().WithMany().HasForeignKey("CommentId"));
+                    }
     }
 }
