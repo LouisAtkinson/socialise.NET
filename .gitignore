@@ -55,4 +55,8 @@ nunit-*.xml
 
 appsettings.Development.json
 appsettings.json
+appsettings.Production.json
 .idea/
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
